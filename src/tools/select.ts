@@ -1,5 +1,5 @@
 /**
- * ponytail.select — the adaptive scorer, exposed as a pure tool.
+ * ponytail-select — the adaptive scorer, exposed as a pure tool.
  *
  * Given task text (or explicit signals), return the mode the policy would
  * pick and the score board that produced it. Deterministic: same input, same
@@ -38,7 +38,7 @@ export function selectTool(service: PonytailXPolicy) {
     outputSchema: OUTPUT_SCHEMA,
     execute(args: unknown) {
       const input = (args ?? {}) as { text?: unknown }
-      if (typeof input.text !== 'string') throw new Error('ponytail.select: `text` (string) is required')
+      if (typeof input.text !== 'string') throw new Error('ponytail-select: `text` (string) is required')
       const signals = extractSignals(input.text)
       const decision = selectMode(signals, service.config.complexity)
       return {

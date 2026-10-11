@@ -25,8 +25,10 @@ describe('checkProfiles', () => {
 
   it('reports honestly when the catalog is unreachable', () => {
     const checks = checkProfiles(DEFAULT_CATALOG, null, [])
-    for (const check of checks) assert.equal(check.advertised, false)
-    assert.match(checks[0]!.note, /not advertised by the router catalog/)
+    for (const check of checks) {
+      assert.equal(check.advertised, false)
+      assert.equal(check.note, 'router catalog unreachable; not checked')
+    }
   })
 
   it('flags ids the host settings do not declare', () => {

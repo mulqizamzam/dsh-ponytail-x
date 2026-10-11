@@ -46,7 +46,7 @@ done
 
 The three profiles are composed by `run-benchmark.mjs`'s sibling patch
 files under `.dsh/profiles/px-*` (each pins the identical
-`nine-router/oc/mimo-v2.6-flash-free(xhigh)` default model so the model is
+`nine-router/ds/deepseek-v4-flash` default model so the model is
 not a variable).
 
 ## Running

@@ -1,5 +1,5 @@
 /**
- * ponytail.model — report the configured agent models and validate them
+ * ponytail-model — report the configured agent models and validate them
  * against the live router catalog.
  *
  * The two profiles (astra, fable) are the operator's real router ids:

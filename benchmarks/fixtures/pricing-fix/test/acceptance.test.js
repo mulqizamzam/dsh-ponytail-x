@@ -19,5 +19,7 @@ test('order totals aggregate discounted lines once', () => {
     { sku: 'widget', quantity: 10 },
     { sku: 'gizmo', quantity: 4 },
   ])
-  assert.equal(total, 89.91 + 13.0)
+  // 89.91 + 13.00 = 102.91 (rounded to cents; never a float expression —
+  // the suite must pass on correct code, not trap IEEE-754 noise)
+  assert.equal(total, 102.91)
 })

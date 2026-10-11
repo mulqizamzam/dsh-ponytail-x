@@ -8,7 +8,7 @@
 import type { ModeId, ModeSetting, ModeSource } from '../modes.ts'
 
 export interface SessionMetrics {
-  /** Explicit override set via ponytail.mode; null means none. */
+  /** Explicit override set via ponytail-mode; null means none. */
   override: ModeSetting | null
   /** Last resolved mode and where it came from. */
   mode: ModeId

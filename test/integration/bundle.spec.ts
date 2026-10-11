@@ -1,6 +1,6 @@
 /**
  * Integration: the bundle activates in a real Cordis host with the real dsh
- * services, registers the ponytail.* tools, and every hook fires with the
+ * services, registers the ponytail-* tools, and every hook fires with the
  * verified waterfall/emit contracts.
  */
 import { describe, it } from 'node:test'
@@ -58,15 +58,15 @@ describe('activation', () => {
     }
   })
 
-  it('tools register under the ponytail. namespace only', async () => {
+  it('tools register under the ponytail- namespace only', async () => {
     const ctx = await setup()
     try {
       const names = ctx.tools.schemas().map(s => s.name)
-      for (const expected of ['ponytail.mode', 'ponytail.select', 'ponytail.model', 'ponytail.status']) {
+      for (const expected of ['ponytail-mode', 'ponytail-select', 'ponytail-model', 'ponytail-status']) {
         assert.ok(names.includes(expected), `expected ${expected} in ${names.join(',')}`)
       }
       for (const name of names) {
-        assert.match(name, /^ponytail\./, `tool ${name} must stay in the ponytail. namespace`)
+        assert.match(name, /^ponytail-/, `tool ${name} must stay in the ponytail- namespace`)
       }
     } finally {
       await ctx.fiber.dispose()
@@ -88,32 +88,32 @@ describe('activation', () => {
 })
 
 describe('tools', () => {
-  it('ponytail.select classifies deterministically and has no side effects', async () => {
+  it('ponytail-select classifies deterministically and has no side effects', async () => {
     const ctx = await setup()
     try {
-      const first = await execute(ctx, 'ponytail.select', { text: 'why did the import keep failing since the deploy? it used to work' })
+      const first = await execute(ctx, 'ponytail-select', { text: 'why did the import keep failing since the deploy? it used to work' })
       assert.equal(first.isError, false, JSON.stringify(first.content))
       const value = first.value as { mode: string; scores: unknown }
       assert.equal(value.mode, 'autopsy')
-      const second = await execute(ctx, 'ponytail.select', { text: 'why did the import keep failing since the deploy? it used to work' })
+      const second = await execute(ctx, 'ponytail-select', { text: 'why did the import keep failing since the deploy? it used to work' })
       assert.deepEqual(second.value, first.value)
     } finally {
       await ctx.fiber.dispose()
     }
   })
 
-  it('ponytail.mode sets and clears a session override', async () => {
+  it('ponytail-mode sets and clears a session override', async () => {
     const ctx = await setup()
     try {
       const agent = { session: { id: 'session-mode', header: { id: 'session-mode' } } }
       const set = await ctx.tools.execute({
-        signal: new AbortController().signal, callId: 'm1', name: 'ponytail.mode',
+        signal: new AbortController().signal, callId: 'm1', name: 'ponytail-mode',
         arguments: { mode: 'ultra' }, agent,
       } as never)
       assert.equal((set.value as { mode: string }).mode, 'ultra')
       assert.equal(ctx.ponytailX.sessions.get('session-mode')?.override, 'ultra')
       const off = await ctx.tools.execute({
-        signal: new AbortController().signal, callId: 'm2', name: 'ponytail.mode',
+        signal: new AbortController().signal, callId: 'm2', name: 'ponytail-mode',
         arguments: { mode: 'off' }, agent,
       } as never)
       assert.equal((off.value as { mode: string }).mode, 'off')
@@ -123,25 +123,41 @@ describe('tools', () => {
     }
   })
 
-  it('ponytail.mode rejects an unknown mode', async () => {
+  it('ponytail-mode rejects an unknown mode', async () => {
     const ctx = await setup()
     try {
-      const result = await execute(ctx, 'ponytail.mode', { mode: 'review' })
+      const result = await execute(ctx, 'ponytail-mode', { mode: 'review' })
       assert.equal(result.isError, true)
     } finally {
       await ctx.fiber.dispose()
     }
   })
 
-  it('ponytail.status reports the calling session', async () => {
+  it('ponytail-status reports the calling session', async () => {
     const ctx = await setup()
     try {
       const result = await ctx.tools.execute({
-        signal: new AbortController().signal, callId: 's1', name: 'ponytail.status',
+        signal: new AbortController().signal, callId: 's1', name: 'ponytail-status',
         arguments: {}, agent: { session: { id: 'session-status', header: { id: 'session-status' } } },
       } as never)
       assert.equal(result.isError, false)
       assert.match(JSON.stringify(result.value), /session-status/)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('ponytail-status --all keeps the session field schema-valid', async () => {
+    const ctx = await setup()
+    try {
+      const result = await ctx.tools.execute({
+        signal: new AbortController().signal, callId: 's2', name: 'ponytail-status',
+        arguments: { all: true }, agent: { session: { id: 'session-status2', header: { id: 'session-status2' } } },
+      } as never)
+      assert.equal(result.isError, false, JSON.stringify(result.content))
+      const value = result.value as { session: unknown; sessions: unknown[] }
+      assert.equal(typeof value.session, 'object', 'session must stay an object, never null')
+      assert.ok(Array.isArray(value.sessions))
     } finally {
       await ctx.fiber.dispose()
     }

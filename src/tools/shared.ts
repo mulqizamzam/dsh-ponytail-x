@@ -1,16 +1,18 @@
 /**
- * Shared tool factory for the ponytail.* namespace.
+ * Shared tool factory for the ponytail-* tool names.
  *
  * Mirrors the dsh-tools pattern used by the harness's own bundles: a plain
  * ToolDefinition (name, description, parameters, output {schema, render},
  * execute) registered through ctx.tools.register. The namespace prefix is
- * applied once here so every tool name starts with `ponytail.`.
+ * applied once here so every tool name starts with `ponytail-`. Kebab-case
+ * (never dotted) — the OpenAI-completions provider grammar
+ * `^[a-zA-Z0-9_-]+$` rejects dots in `tools[N].function.name`.
  */
 import type { ToolDefinition, ToolRunContext } from '@deepseek-ai/dsh-tools'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 
 export interface PonytailToolSpec {
-  /** Tool name without the `ponytail.` prefix. */
+  /** Tool name without the `ponytail-` prefix. */
   readonly name: string
   readonly description: string
   readonly parameters: Record<string, unknown>
@@ -19,7 +21,7 @@ export interface PonytailToolSpec {
 }
 
 export function toolName(name: string): string {
-  return `ponytail.${name}`
+  return `ponytail-${name}`
 }
 
 function renderText(value: unknown): string {

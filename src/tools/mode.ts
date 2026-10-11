@@ -1,5 +1,5 @@
 /**
- * ponytail.mode — read or set the session mode.
+ * ponytail-mode — read or set the session mode.
  *
  * Read: `{}` returns the resolved mode for the calling session (override,
  * adaptive pick, or default). Set: `{ mode: "ultra" | "surgical" | "off" }`
@@ -57,7 +57,7 @@ export function modeTool(service: PonytailXPolicy) {
       if (typeof input.mode === 'string') {
         const setting = parseModeSetting(input.mode)
         if (setting === null) {
-          throw new Error(`ponytail.mode: unknown mode "${input.mode}"; use ${[...MODE_IDS, 'off'].join(', ')}`)
+          throw new Error(`ponytail-mode: unknown mode "${input.mode}"; use ${[...MODE_IDS, 'off'].join(', ')}`)
         }
         service.overrideSetting(sessionId, setting)
         const state = service.sessions.get(sessionId)

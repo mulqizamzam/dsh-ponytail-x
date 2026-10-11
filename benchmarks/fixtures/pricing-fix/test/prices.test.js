@@ -27,7 +27,8 @@ test('small orders are not discounted', () => {
 })
 
 test('order totals sum the lines', () => {
-  assert.equal(orderTotal([{ sku: 'gizmo', quantity: 2 }, { sku: 'widget', quantity: 1 }]), 6.5 + 9.99)
+  // 6.50 + 9.99 = 16.49 after cents rounding (exact literal, not a float sum)
+  assert.equal(orderTotal([{ sku: 'gizmo', quantity: 2 }, { sku: 'widget', quantity: 1 }]), 16.49)
 })
 
 test('rounding is half-up to cents', () => {

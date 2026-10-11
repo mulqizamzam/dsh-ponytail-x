@@ -1,5 +1,5 @@
 /**
- * ponytail.status — session metrics for the calling session (or all).
+ * ponytail-status — session metrics for the calling session (or all).
  *
  * Token counts come from the llm/stream approximation (chars/4) and are
  * labelled approximate; tool calls and duration are exact observations.
@@ -37,21 +37,19 @@ export function statusTool(service: PonytailXPolicy) {
       const input = (args ?? {}) as { all?: unknown }
       const sessionId = sessionIdFromAgent(exec.agent)
       const tokensByModel = Object.fromEntries(service.modelTokens)
-      if (input.all === true) {
-        return { session: null, sessions: service.sessions.all(), approxTokensByModel: tokensByModel }
-      }
       const state = service.sessions.get(sessionId)
-      return {
-        session: state
-          ? {
-            sessionId,
-            ...state,
-            elapsedMs: state.lastStepAt - state.startedAt,
-            approxTokens: state.approxTokens,
-          }
-          : { sessionId, note: 'no step observed yet' },
-        approxTokensByModel: tokensByModel,
+      const session = state
+        ? {
+          sessionId,
+          ...state,
+          elapsedMs: state.lastStepAt - state.startedAt,
+          approxTokens: state.approxTokens,
+        }
+        : { sessionId, note: 'no step observed yet' }
+      if (input.all === true) {
+        return { session, sessions: service.sessions.all(), approxTokensByModel: tokensByModel }
       }
+      return { session, approxTokensByModel: tokensByModel }
     },
   })
 }

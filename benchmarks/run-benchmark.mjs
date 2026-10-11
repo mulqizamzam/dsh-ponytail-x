@@ -68,9 +68,16 @@ function git(dir, ...gitArgs) {
 function scoreRun(workdir) {
   const results = {}
   for (const suite of ['acceptance.test.js', 'prices.test.js']) {
+    // Exit code is the oracle: `node --test` exits non-zero on any failure.
+    // Text matching is NOT used — the summary line carries an ℹ prefix, and a
+    // "# fail N" pattern silently matches nothing.
     try {
-      const out = execFileSync('node', ['--test', `test/${suite}`], { cwd: workdir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
-      results[suite] = /# fail 0/.test(out)
+      execFileSync('node', ['--test', `test/${suite}`], {
+        cwd: workdir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'ignore', 'ignore'],
+      })
+      results[suite] = true
     } catch {
       results[suite] = false
     }

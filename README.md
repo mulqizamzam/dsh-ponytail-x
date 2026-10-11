@@ -22,7 +22,7 @@ metrics — all through public plugin seams. No DSH core is modified.
 | `skills/ponytail-diff` | Smallest complete diff + scope discipline |
 | `skills/ponytail-proof` | Proof tests, honest verification, report lines |
 | `skills/ponytail-invariant` | Hold the repo's contract; adversarial checklist |
-| Policy service (`ponytail.` tools) | Mode resolution, adaptive selection, model validation, metrics |
+| Policy service (`ponytail-` tools) | Mode resolution, adaptive selection, model validation, metrics |
 | `cordis.patch.yml` | The bundle patch inserting both entries |
 
 ### Modes
@@ -31,20 +31,20 @@ metrics — all through public plugin seams. No DSH core is modified.
 
 Selected per step, first match wins:
 
-1. explicit override — `ponytail.mode` tool (`{ "mode": "ultra" }`, `"off"` disables)
+1. explicit override — `ponytail-mode` tool (`{ "mode": "ultra" }`, `"off"` disables)
 2. user gesture — `/ponytail ultra`, `/ponytail-core surgical`, or `stop ponytail`
 3. adaptive scoring — deterministic signals over the step's newest user message
    (complexity, risk, failure, uncertainty)
 4. the configured default (`full`)
 
-### Tools (namespace `ponytail.`)
+### Tools (namespace `ponytail-`)
 
 | Tool | Purpose |
 |---|---|
-| `ponytail.mode` | Read/set the session mode; preview an adaptive pick with `text` |
-| `ponytail.select` | Classify a task text into a mode with the score board (pure) |
-| `ponytail.model` | Validate the configured model profiles against the live router catalog |
-| `ponytail.status` | Session metrics: mode, turns, steps, tool calls, elapsed, tokens |
+| `ponytail-mode` | Read/set the session mode; preview an adaptive pick with `text` |
+| `ponytail-select` | Classify a task text into a mode with the score board (pure) |
+| `ponytail-model` | Validate the configured model profiles against the live router catalog |
+| `ponytail-status` | Session metrics: mode, turns, steps, tool calls, elapsed, tokens |
 
 ## Install
 
@@ -116,7 +116,7 @@ mechanism is `agent-default-model` in the profile patch or settings:
     reasoningEffort: max
 ```
 
-`ponytail.model` validates both ids against the live router and reports
+`ponytail-model` validates both ids against the live router and reports
 `advertised` / `not advertised` / capabilities honestly. **Known state at
 ship time:** both ids are advertised by the router catalog, but the `th/`
 route currently answers `No active credentials for provider: tokenharbor`
@@ -155,7 +155,7 @@ Config is fail-loud: every rejection names the exact field path
 skills), `upstream` (upstream ponytail skills via skill-filesystem),
 `ponytail-x` (this bundle) — on the same fixture
 (`benchmarks/fixtures/pricing-fix`: one seeded double-discount bug) with
-identical task text, identical model, and identical acceptance criteria
+identical task text, identical model (`nine-router/ds/deepseek-v4-flash`), and identical acceptance criteria
 (acceptance suite green, existing suite green, diff limited to `src/`).
 Metrics: correctness, tokens, tool calls, duration, diff size.
 
@@ -172,7 +172,7 @@ node benchmarks/run-benchmark.mjs --runs 3
 | `ponytail-x` entries missing from `--dump-config` | Bundle patch not applied | the profile `package.json` must list `dsh-ponytail-x` in `dsh.profile.bundles` |
 | AUTH fails with an old key | `$DSH_HOME/.credentials.yaml` outranks `.env` and the process env is not inherited by the booted app | update the managed store in `$DSH_HOME/.credentials.yaml` |
 | `th/*` models fail with `No active credentials` | Router-side credentials for the `th` route are inactive | use another provider model; the ids stay wired for when it returns |
-| Modes never switch | a session override from `ponytail.mode` is sticky | `ponytail.mode { "mode": "off" }` then back, or restart the session |
+| Modes never switch | a session override from `ponytail-mode` is sticky | `ponytail-mode { "mode": "off" }` then back, or restart the session |
 | `type arrays are not supported` from the tool registry | a plugin tool schema used `type: [x, "null"]` | keep output schemas single-typed (this bundle's tool outputs are strings) |
 
 ## License

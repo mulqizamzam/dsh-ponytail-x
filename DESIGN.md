@@ -45,11 +45,11 @@ ponytail-x/                      # deliverable repo
 │   │   ├── llm-stream.ts        # token accounting (approximate)
 │   │   └── tools-result.ts      # tool-call counting
 │   ├── tools/
-│   │   ├── shared.ts            # defineTool wrapper (namespaced ponytail.)
-│   │   ├── mode.ts              # ponytail.mode get/set
-│   │   ├── select.ts            # ponytail.select (pure scoring, exposed)
-│   │   ├── model.ts             # ponytail.model validate/report
-│   │   └── status.ts            # ponytail.status session metrics
+│   │   ├── shared.ts            # defineTool wrapper (namespaced ponytail-)
+│   │   ├── mode.ts              # ponytail-mode get/set
+│   │   ├── select.ts            # ponytail-select (pure scoring, exposed)
+│   │   ├── model.ts             # ponytail-model validate/report
+│   │   └── status.ts            # ponytail-status session metrics
 │   └── state/
 │       └── session-state.ts     # per-session mode + metrics map
 ├── skills/                      # 6 SKILL.md files (fork of upstream content)
@@ -83,7 +83,7 @@ Modes: `lite`, `full`, `ultra` (upstream parity) plus `surgical`, `autopsy` (X e
 | `autopsy` | failure analysis: repeated failures, regression, postmortem ask | root-cause + timeline + prevention + postmortem artifact |
 
 Resolution order per step (deterministic, unit-tested):
-1. explicit override via `ponytail.mode` tool (session-sticky) or `off`;
+1. explicit override via `ponytail-mode` tool (session-sticky) or `off`;
 2. user gesture `/ponytail-<mode>` in the step's user messages;
 3. adaptive scoring over the step's newest user message (`selectMode(signals) -> {mode, scores, reasons}`);
 4. config `defaultMode` (default `full`).
@@ -96,7 +96,7 @@ and also). Thresholds live in config so they are tunable without code changes.
 ## Model configuration (GPT 6 ASTRA / FABLE 5.1)
 
 - Verified ids (no invention): provider `nine-router`, `th/gpt-6-astra` and `th/claude-fable-5.1`.
-- Plugin ships these as config (`models.astra`, `models.fable`) and the `ponytail.model` tool
+- Plugin ships these as config (`models.astra`, `models.fable`) and the `ponytail-model` tool
   validates them against the live router catalog, reporting `available` / `no-active-credentials`
   honestly.
 - Host-level activation is native config, documented (not invented):

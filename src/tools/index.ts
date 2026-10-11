@@ -1,5 +1,5 @@
 /**
- * Tool registry for the ponytail.* namespace.
+ * Tool registry for the ponytail-* tool names.
  *
  * Every tool receives the service at registration time; the registry is the
  * only wiring point, mirroring the harness bundle pattern.

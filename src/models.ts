@@ -65,11 +65,12 @@ export function checkProfiles(
     const capabilities = (routerModels ?? []).find(m => m.id === profile.model)?.capabilities
     const configuredInSettings = settingsModelIds.includes(profile.model)
     let note: string
-    if (!advertised) note = 'not advertised by the router catalog'
+    if (routerModels === null) note = 'router catalog unreachable; not checked'
+    else if (!advertised) note = 'not advertised by the router catalog'
     else if (capabilities) {
       note = `ctx ${capabilities.contextWindow ?? '?'}, tools ${capabilities.tools === true ? 'yes' : 'no'}, reasoning ${capabilities.reasoning === true ? 'yes' : 'no'}`
     } else note = 'advertised; capabilities unknown'
-    if (advertised && !configuredInSettings) {
+    if (routerModels !== null && advertised && !configuredInSettings) {
       note += '; not declared in host settings (pass-through id)'
     }
     return { profile: name, provider: profile.provider, model: profile.model, advertised, configuredInSettings, note }
