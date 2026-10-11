@@ -160,9 +160,28 @@ identical task text, identical model (`nine-router/ds/deepseek-v4-flash`), and i
 Metrics: correctness, tokens, tool calls, duration, diff size.
 
 ```bash
-node benchmarks/run-benchmark.mjs --runs 3
-# results: ../bench/results/benchmark.md + benchmark.json
+node benchmarks/run-benchmark.mjs --single baseline 1   # one run, foreground
+node benchmarks/aggregate.mjs                          # rebuild the report
 ```
+
+Measured result, 3 runs per condition, full table in
+[`benchmarks/RESULTS.md`](benchmarks/RESULTS.md):
+
+| condition | pass rate | mean tokens | mean tool calls | mean duration | mean diff lines |
+|---|---|---|---|---|---|
+| baseline | 3/3 | 244,286 | 25.3 | 69.2 s | 3.7 |
+| upstream | 3/3 | 144,611 | 16.3 | 47.5 s | 3.7 |
+| ponytail-x | 3/3 | 314,821 | 21.3 | 91.9 s | 3.0 |
+
+Read this honestly: on a small, well-specified fixture all three conditions
+fix the bug — the fixture does not separate them on correctness. Upstream
+ponytail is the leanest (fewest tokens, fastest), consistent with its
+"write less" thesis. Ponytail X pays for its extras (injected mode policy,
+five skills, session metrics) in tokens and time, and in return produces the
+smallest and most consistent diff (3 lines in all 3 runs). The run also
+caught a real defect — dotted tool names (`ponytail.mode`) are rejected by
+the OpenAI-completions provider grammar; the bundle now ships kebab-case
+tool names.
 
 ## Troubleshooting
 
@@ -174,6 +193,7 @@ node benchmarks/run-benchmark.mjs --runs 3
 | `th/*` models fail with `No active credentials` | Router-side credentials for the `th` route are inactive | use another provider model; the ids stay wired for when it returns |
 | Modes never switch | a session override from `ponytail-mode` is sticky | `ponytail-mode { "mode": "off" }` then back, or restart the session |
 | `type arrays are not supported` from the tool registry | a plugin tool schema used `type: [x, "null"]` | keep output schemas single-typed (this bundle's tool outputs are strings) |
+| Provider rejects the request with `tools[N].function.name` | a tool name carried a dot | kebab-case only (`ponytail-*`); the provider grammar is `^[a-zA-Z0-9_-]+$` |
 
 ## License
 

@@ -1,0 +1,367 @@
+{
+  "generatedAt": "2026-10-11T12:32:24.454Z",
+  "runs": [
+    {
+      "condition": "baseline",
+      "run": 1,
+      "task": "pricing-fix",
+      "durationMs": 79573,
+      "totalTokens": 289776,
+      "inputTokens": 46309,
+      "outputTokens": 11403,
+      "toolCalls": 26,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    },
+    {
+      "condition": "baseline",
+      "run": 2,
+      "task": "pricing-fix",
+      "durationMs": 62887,
+      "totalTokens": 220709,
+      "inputTokens": 46311,
+      "outputTokens": 9278,
+      "toolCalls": 25,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 4,
+      "correct": true
+    },
+    {
+      "condition": "baseline",
+      "run": 3,
+      "task": "pricing-fix",
+      "durationMs": 65144,
+      "totalTokens": 222373,
+      "inputTokens": 46239,
+      "outputTokens": 9222,
+      "toolCalls": 25,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 4,
+      "correct": true
+    },
+    {
+      "condition": "upstream",
+      "run": 1,
+      "task": "pricing-fix",
+      "durationMs": 55958,
+      "totalTokens": 182134,
+      "inputTokens": 29946,
+      "outputTokens": 7420,
+      "toolCalls": 17,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    },
+    {
+      "condition": "upstream",
+      "run": 2,
+      "task": "pricing-fix",
+      "durationMs": 41561,
+      "totalTokens": 142199,
+      "inputTokens": 26980,
+      "outputTokens": 5395,
+      "toolCalls": 14,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 5,
+      "correct": true
+    },
+    {
+      "condition": "upstream",
+      "run": 3,
+      "task": "pricing-fix",
+      "durationMs": 45130,
+      "totalTokens": 109500,
+      "inputTokens": 21573,
+      "outputTokens": 6903,
+      "toolCalls": 18,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    },
+    {
+      "condition": "ponytail-x",
+      "run": 1,
+      "task": "pricing-fix",
+      "durationMs": 96217,
+      "totalTokens": 337301,
+      "inputTokens": 43391,
+      "outputTokens": 11030,
+      "toolCalls": 21,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    },
+    {
+      "condition": "ponytail-x",
+      "run": 2,
+      "task": "pricing-fix",
+      "durationMs": 80821,
+      "totalTokens": 270023,
+      "inputTokens": 37808,
+      "outputTokens": 10007,
+      "toolCalls": 22,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    },
+    {
+      "condition": "ponytail-x",
+      "run": 3,
+      "task": "pricing-fix",
+      "durationMs": 98622,
+      "totalTokens": 337138,
+      "inputTokens": 54560,
+      "outputTokens": 11474,
+      "toolCalls": 21,
+      "acceptance": true,
+      "regressionFree": true,
+      "srcOnlyDiff": true,
+      "diffFiles": [
+        "src/prices.js"
+      ],
+      "diffLines": 3,
+      "correct": true
+    }
+  ],
+  "conditions": {
+    "baseline": {
+      "runs": [
+        {
+          "condition": "baseline",
+          "run": 1,
+          "task": "pricing-fix",
+          "durationMs": 79573,
+          "totalTokens": 289776,
+          "inputTokens": 46309,
+          "outputTokens": 11403,
+          "toolCalls": 26,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        },
+        {
+          "condition": "baseline",
+          "run": 2,
+          "task": "pricing-fix",
+          "durationMs": 62887,
+          "totalTokens": 220709,
+          "inputTokens": 46311,
+          "outputTokens": 9278,
+          "toolCalls": 25,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 4,
+          "correct": true
+        },
+        {
+          "condition": "baseline",
+          "run": 3,
+          "task": "pricing-fix",
+          "durationMs": 65144,
+          "totalTokens": 222373,
+          "inputTokens": 46239,
+          "outputTokens": 9222,
+          "toolCalls": 25,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 4,
+          "correct": true
+        }
+      ],
+      "passRate": 1,
+      "meanTokens": 244286,
+      "meanInputTokens": 46286.333333333336,
+      "meanOutputTokens": 9967.666666666666,
+      "meanToolCalls": 25.333333333333332,
+      "meanDurationMs": 69201.33333333333,
+      "meanDiffLines": 3.6666666666666665,
+      "regressions": 0
+    },
+    "upstream": {
+      "runs": [
+        {
+          "condition": "upstream",
+          "run": 1,
+          "task": "pricing-fix",
+          "durationMs": 55958,
+          "totalTokens": 182134,
+          "inputTokens": 29946,
+          "outputTokens": 7420,
+          "toolCalls": 17,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        },
+        {
+          "condition": "upstream",
+          "run": 2,
+          "task": "pricing-fix",
+          "durationMs": 41561,
+          "totalTokens": 142199,
+          "inputTokens": 26980,
+          "outputTokens": 5395,
+          "toolCalls": 14,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 5,
+          "correct": true
+        },
+        {
+          "condition": "upstream",
+          "run": 3,
+          "task": "pricing-fix",
+          "durationMs": 45130,
+          "totalTokens": 109500,
+          "inputTokens": 21573,
+          "outputTokens": 6903,
+          "toolCalls": 18,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        }
+      ],
+      "passRate": 1,
+      "meanTokens": 144611,
+      "meanInputTokens": 26166.333333333332,
+      "meanOutputTokens": 6572.666666666667,
+      "meanToolCalls": 16.333333333333332,
+      "meanDurationMs": 47549.666666666664,
+      "meanDiffLines": 3.6666666666666665,
+      "regressions": 0
+    },
+    "ponytail-x": {
+      "runs": [
+        {
+          "condition": "ponytail-x",
+          "run": 1,
+          "task": "pricing-fix",
+          "durationMs": 96217,
+          "totalTokens": 337301,
+          "inputTokens": 43391,
+          "outputTokens": 11030,
+          "toolCalls": 21,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        },
+        {
+          "condition": "ponytail-x",
+          "run": 2,
+          "task": "pricing-fix",
+          "durationMs": 80821,
+          "totalTokens": 270023,
+          "inputTokens": 37808,
+          "outputTokens": 10007,
+          "toolCalls": 22,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        },
+        {
+          "condition": "ponytail-x",
+          "run": 3,
+          "task": "pricing-fix",
+          "durationMs": 98622,
+          "totalTokens": 337138,
+          "inputTokens": 54560,
+          "outputTokens": 11474,
+          "toolCalls": 21,
+          "acceptance": true,
+          "regressionFree": true,
+          "srcOnlyDiff": true,
+          "diffFiles": [
+            "src/prices.js"
+          ],
+          "diffLines": 3,
+          "correct": true
+        }
+      ],
+      "passRate": 1,
+      "meanTokens": 314820.6666666667,
+      "meanInputTokens": 45253,
+      "meanOutputTokens": 10837,
+      "meanToolCalls": 21.333333333333332,
+      "meanDurationMs": 91886.66666666667,
+      "meanDiffLines": 3,
+      "regressions": 0
+    }
+  }
+}

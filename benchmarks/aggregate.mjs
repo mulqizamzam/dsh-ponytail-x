@@ -52,7 +52,7 @@ function main() {
   const lines = []
   lines.push(`# Ponytail X benchmark — ${report.generatedAt}`)
   lines.push('')
-  lines.push('Conditions share the fixture (pricing-fix), the task text, the model (nine-router/oc/mimo-v2.6-flash-free(xhigh)), and the acceptance criteria: acceptance suite green, existing suite green, diff limited to src/.')
+  lines.push('Conditions share the fixture (pricing-fix), the task text, the model (nine-router/ds/deepseek-v4-flash), and the acceptance criteria: acceptance suite green, existing suite green, diff limited to src/.')
   lines.push('')
   lines.push('| condition | runs | pass rate | mean tokens (in/out) | mean tool calls | mean duration (s) | mean diff lines | regressions |')
   lines.push('|---|---|---|---|---|---|---|---|')

@@ -116,3 +116,19 @@ and also). Thresholds live in config so they are tunable without code changes.
    skills visible (model can load `ponytail-core`).
 5. Benchmark report exists with real measured numbers for baseline / upstream / ponytail-x
    on identical tasks and acceptance criteria.
+
+
+## Final measured results (2026-10-11)
+
+- 56/56 tests pass; oxlint 0 warnings; tsc build clean.
+- Bundle installs via `dsh plugin --profile px-ponytailx add link:…`;
+  `dsh --dump-config-schema` validates; skills load through `skill()`;
+  `ponytail-select` and `ponytail-model` verified live through the harness.
+- Benchmark (3 conditions x 3 runs, identical fixture/task/model
+  nine-router/ds/deepseek-v4-flash): baseline 3/3 @ 244,286 tokens,
+  upstream 3/3 @ 144,611 tokens, ponytail-x 3/3 @ 314,821 tokens with the
+  smallest mean diff (3.0 lines). Full table in benchmarks/RESULTS.md.
+- The benchmark caught and the fix shipped: dotted tool names rejected by
+  the provider grammar; the dual-th/default `status` schema bug; per-step
+  injection duplication. Each fix has a regression test that fails on the
+  reverted code.
