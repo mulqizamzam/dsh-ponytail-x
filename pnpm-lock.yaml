@@ -1,0 +1,43 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: link:/home/administrator/deepseek-harness/vendor/cordis
+        version: link:../../../deepseek-harness/vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: link:/home/administrator/deepseek-harness/packages/core/agent
+        version: link:../../../deepseek-harness/packages/core/agent
+      '@deepseek-ai/dsh-llm':
+        specifier: link:/home/administrator/deepseek-harness/packages/llm/llm
+        version: link:../../../deepseek-harness/packages/llm/llm
+      '@deepseek-ai/dsh-session':
+        specifier: link:/home/administrator/deepseek-harness/packages/core/session
+        version: link:../../../deepseek-harness/packages/core/session
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: link:/home/administrator/deepseek-harness/packages/core/system-prompt
+        version: link:../../../deepseek-harness/packages/core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: link:/home/administrator/deepseek-harness/packages/core/tools
+        version: link:../../../deepseek-harness/packages/core/tools
+      '@deepseek-ai/schemastery':
+        specifier: link:/home/administrator/deepseek-harness/vendor/schemastery
+        version: link:../../../deepseek-harness/vendor/schemastery
+      '@types/node':
+        specifier: link:/home/administrator/deepseek-harness/node_modules/@types/node
+        version: link:../../../deepseek-harness/node_modules/@types/node
+      js-yaml:
+        specifier: link:/home/administrator/deepseek-harness/node_modules/js-yaml
+        version: link:../../../deepseek-harness/node_modules/js-yaml
+      tsx:
+        specifier: link:/home/administrator/deepseek-harness/node_modules/tsx
+        version: link:../../../deepseek-harness/node_modules/tsx
+      typescript:
+        specifier: link:/home/administrator/deepseek-harness/node_modules/typescript
+        version: link:../../../deepseek-harness/node_modules/typescript
