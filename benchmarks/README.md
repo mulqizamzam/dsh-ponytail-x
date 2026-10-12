@@ -38,8 +38,8 @@ cp /home/administrator/agent-workspace/.dsh/.credentials.yaml $BENCH/dsh-home/
 # replace NINE_ROUTER_API_KEY's value with a working key (operator-provided)
 for p in px-baseline px-upstream px-ponytailx; do
   cp -a /home/administrator/agent-workspace/.dsh/profiles/$p $BENCH/dsh-home/profiles/
-  # the copied profile's relative node_modules symlink must be re-absolute:
-  ln -sfn /home/administrator/agent-workspace/pxpipe/ponytail-x \
+  # point the link dependency at the plugin's real (relocatable) location:
+  ln -sfn /home/administrator/agent-workspace/dsh-custom/plugins/dsh-ponytail-x \
     $BENCH/dsh-home/profiles/px-ponytailx/node_modules/dsh-ponytail-x
 done
 ```

@@ -28,10 +28,24 @@
 import { execFileSync, spawn } from 'node:child_process'
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, appendFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(fileURLToPath(new URL('..', import.meta.url)))
-const BENCH = join(ROOT, '..', 'bench')
+
+// The bench workspace (dsh-home sandbox, results) lives outside the plugin now
+// that the plugin is installed under dsh-custom/plugins. Resolution order:
+//   1. BENCH_DIR env var (explicit)
+//   2. <plugin>/../bench (the old in-suite layout)
+//   3. the operator's absolute pxpipe location
+function resolveBench() {
+  if (process.env['BENCH_DIR']) return process.env['BENCH_DIR']
+  const sibling = join(ROOT, '..', 'bench')
+  if (existsSync(sibling)) return sibling
+  return '/home/administrator/agent-workspace/pxpipe/bench'
+}
+
+const BENCH = resolveBench()
 const DSH_HOME = process.env['BENCH_DSH_HOME'] ?? join(BENCH, 'dsh-home')
 const FIXTURES_DIR = fileURLToPath(new URL('./fixtures', import.meta.url))
 
