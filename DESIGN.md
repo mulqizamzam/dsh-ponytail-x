@@ -35,8 +35,7 @@ ponytail-x/                      # deliverable repo
 │   ├── index.ts                 # bundle entry: default export = PonytailXPolicy
 │   ├── policy-service.ts        # Cordis Service: config, state, wiring
 │   ├── config/
-│   │   ├── schema.ts            # Schemastery Config (fail-loud)
-│   │   └── defaults.ts          # resolveConfig() validator
+│   │   └── schema.ts            # Schemastery Config + resolveConfig() (fail-loud, rejects unknown keys)
 │   ├── modes.ts                 # pure: MODE table, adaptive scoring, resolution
 │   ├── models.ts                # pure: model catalog (verified ids), provider check
 │   ├── hooks/

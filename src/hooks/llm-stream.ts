@@ -25,6 +25,10 @@ export function wireLlmStream(ctx: Context): void {
   ): AsyncIterable<StreamChunk> {
     const svc = ctx.ponytailX as PonytailXPolicy
     const model = options.model ?? 'unknown'
+    // The agent loop stamps every loop-built request with the session id
+    // (GenerateOptions.sessionId); one-shot callers may omit it, in which
+    // case the count stays in the per-model map only.
+    const sessionId = typeof options.sessionId === 'string' ? options.sessionId : null
     let tokens = 0
     for await (const raw of next()) {
       const text = chunkText(raw)
@@ -32,5 +36,6 @@ export function wireLlmStream(ctx: Context): void {
       yield raw
     }
     svc.accountModelTokens(model, tokens)
+    if (sessionId !== null && tokens > 0) svc.accountSessionTokens(sessionId, tokens)
   })
 }

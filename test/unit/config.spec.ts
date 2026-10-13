@@ -43,4 +43,13 @@ describe('resolveConfig', () => {
     assert.throws(() => resolveConfig({ models: { astra: { model: '' } } }), /models\.astra\.model must be a non-empty string/)
     assert.throws(() => resolveConfig({ models: 'none' }), /models must be an object/)
   })
+
+  // Proof test for the dead-patch-key defect (commit e38394b shipped
+  // models.A/models.B; the schema reads models.astra/models.fable, so the
+  // patch config silently vanished and defaults applied).
+  it('rejects unrecognized config keys instead of silently dropping them', () => {
+    assert.throws(() => resolveConfig({ models: { A: { provider: 'nine-router', model: 'x' } } }), /models\.A is not a recognized config key/)
+    assert.throws(() => resolveConfig({ injection: { maxChar: 10 } }), /injection\.maxChar is not a recognized config key/)
+    assert.throws(() => resolveConfig({ defualtMode: 'full' }), /config\.defualtMode is not a recognized config key/)
+  })
 })

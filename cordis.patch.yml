@@ -22,12 +22,12 @@
           ultraAt: 6
           liteAt: 1
         models:
-          A:
+          astra:
             provider: nine-router
-            model: oc/step-5-preview-free
-          B:
+            model: th/gpt-6-astra
+          fable:
             provider: nine-router
-            model: Deterministik
+            model: th/claude-fable-5.1
     - id: ponytail-x-skills
       name: '@deepseek-ai/dsh-skill-filesystem'
       config:

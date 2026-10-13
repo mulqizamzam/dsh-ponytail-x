@@ -87,22 +87,40 @@ function expectMode(value: unknown, path: string): PonytailXConfig['defaultMode'
 }
 
 /**
+ * Reject keys the config contract does not name. Without this, a typo or a
+ * stale patch key (e.g. `models.A` instead of `models.astra`) is silently
+ * dropped and the default quietly applies — the failure mode this whole
+ * fail-loud resolver exists to prevent.
+ */
+function rejectUnknown(source: Record<string, unknown>, path: string, known: readonly string[]): void {
+  for (const key of Object.keys(source)) {
+    if (!known.includes(key)) fail(`${path}.${key}`, 'is not a recognized config key')
+  }
+}
+
+/**
  * Validate a raw patch config into the typed config. Every rejection names the
  * exact field path; no silent defaults beyond the documented fallbacks.
  */
 export function resolveConfig(input: Record<string, unknown> = {}): PonytailXConfig {
   const root = expectObject(input, 'config')
+  rejectUnknown(root, 'config', ['defaultMode', 'injection', 'complexity', 'models'])
   if (root['defaultMode'] !== undefined && typeof root['defaultMode'] !== 'string') {
     fail('defaultMode', 'must be a mode string')
   }
   const defaultMode = root['defaultMode'] === undefined ? 'full' : expectMode(root['defaultMode'], 'defaultMode')
 
   const injection = expectObject(root['injection'] ?? {}, 'injection')
+  rejectUnknown(injection, 'injection', ['enabled', 'maxChars'])
   const complexity = expectObject(root['complexity'] ?? {}, 'complexity')
+  rejectUnknown(complexity, 'complexity', ['ultraAt', 'liteAt'])
   const models = expectObject(root['models'] ?? {}, 'models')
+  rejectUnknown(models, 'models', ['astra', 'fable'])
 
   const astra = expectObject(models['astra'] ?? {}, 'models.astra')
+  rejectUnknown(astra, 'models.astra', ['provider', 'model'])
   const fable = expectObject(models['fable'] ?? {}, 'models.fable')
+  rejectUnknown(fable, 'models.fable', ['provider', 'model'])
 
   return {
     defaultMode,

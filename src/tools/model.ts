@@ -34,11 +34,10 @@ export function modelTool(service: PonytailXPolicy) {
     parameters: PARAMETERS,
     outputSchema: OUTPUT_SCHEMA,
     async execute() {
-      const baseUrl = process.env['NINE_ROUTER_BASE_URL'] ?? 'http://localhost:20128/v1'
-      const checks = await service.validateModels()
+      const { checks, catalogReachable, baseUrl } = await service.validateModels()
       return {
         profiles: checks,
-        catalogReachable: checks.some(check => check.advertised || check.note !== 'not advertised by the router catalog'),
+        catalogReachable,
         baseUrl,
       }
     },

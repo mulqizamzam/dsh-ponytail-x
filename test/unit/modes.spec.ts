@@ -31,6 +31,21 @@ describe('extractSignals', () => {
     assert.equal(signals.hasStackTrace, true)
     assert.equal(signals.hasFileLine, true)
   })
+
+  // Proof tests for the substring false-positive defect: 'fixture' and
+  // 'prefix' both contain 'fix', and '1.5' looked like a dotted path token.
+  it('does not count substrings of longer words as signal hits', () => {
+    assert.equal(extractSignals('update the fixture for the discount calc').surgicalHits, 0)
+    assert.equal(extractSignals('the prefix on this URL is wrong').surgicalHits, 0)
+    assert.equal(extractSignals('the rate is 1.5 percent and 3.14 elsewhere').pathCount, 0)
+  })
+
+  it('still counts intended variants (fixes, fixed, failing, 500)', () => {
+    assert.equal(extractSignals('fix this crash').surgicalHits, 1)
+    assert.equal(extractSignals('the build fails').failureHits, 1)
+    assert.equal(extractSignals('we lost 500 records').failureHits, 1)
+    assert.ok(extractSignals('src/a.ts and src/b.ts').pathCount === 2)
+  })
 })
 
 describe('parseModeSetting', () => {

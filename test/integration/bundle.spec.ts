@@ -85,6 +85,22 @@ describe('activation', () => {
     )
     await ctx.fiber.dispose()
   })
+
+  // Proof test for the dead-patch-key defect: the shipped patch used to carry
+  // models.A/models.B, which the schema does not name. The bundle must refuse
+  // to load with a field path, not silently fall back to defaults.
+  it('refuses to load with patch keys the schema does not name', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(SessionStore)
+    await assert.rejects(
+      async () => { await ctx.plugin(PonytailXPolicy, { models: { A: { provider: 'nine-router', model: 'x' } } } as Record<string, unknown>) },
+      /models\.A is not a recognized config key/,
+    )
+    await ctx.fiber.dispose()
+  })
 })
 
 describe('tools', () => {
@@ -231,6 +247,46 @@ describe('hooks', () => {
       for await (const chunk of stream) out.push(chunk.text)
       assert.deepEqual(out, ['hello ', 'world'], 'stream must pass through unmodified')
       assert.equal(ctx.ponytailX.modelTokens.get('test-model'), 4, 'per-chunk accumulation: ceil(6/4) + ceil(5/4) = 2 + 2')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  // Proof test for the dead session metric: SessionMetrics.approxTokens was
+  // documented as llm/stream-derived but nothing ever wrote it (stayed 0).
+  it('llm/stream attributes tokens to the session stamped on the request', async () => {
+    const ctx = await setup()
+    try {
+      async function* source() {
+        yield { text: 'abcdefgh' }
+      }
+      const stream = await waterfall(ctx, 'llm/stream', { model: 'test-model', sessionId: 'session-tokens' }, source) as AsyncIterable<{ text: string }>
+      for await (const _chunk of stream) { /* drain */ }
+      assert.equal(ctx.ponytailX.modelTokens.get('test-model'), 2)
+      assert.equal(ctx.ponytailX.sessions.get('session-tokens')?.approxTokens, 2)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('renderInjection never leaves a lone surrogate when truncating', async () => {
+    const reasons = ['🚀🚀🚀🚀🚀 reason text']
+    const full = await setup({ injection: { maxChars: 100_000 } })
+    let firstHigh: number
+    try {
+      const whole = full.ponytailX.renderInjection('ultra', reasons)
+      firstHigh = whole.search(/[\uD800-\uDBFF]/)
+      assert.ok(firstHigh >= 0, 'the rendered body must contain an astral char')
+    } finally {
+      await full.fiber.dispose()
+    }
+    // maxChars = firstHigh + 2 puts the old slice() cut between the high and
+    // the low surrogate of the first 🚀.
+    const ctx = await setup({ injection: { maxChars: firstHigh + 2 } })
+    try {
+      const body = ctx.ponytailX.renderInjection('ultra', reasons)
+      assert.match(body, /…$/)
+      assert.doesNotMatch(body, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/)
     } finally {
       await ctx.fiber.dispose()
     }

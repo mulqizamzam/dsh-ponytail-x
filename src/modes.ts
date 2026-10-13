@@ -66,11 +66,31 @@ const MULTI_STEP_WORDS: readonly string[] = [
   'first,', 'finally,', 'additionally', 'on top of that',
 ]
 
-/** Count case-insensitive whole-word-ish occurrences of each term. */
+/**
+ * Count term occurrences with word boundaries and English suffix stems.
+ *
+ * Substring matching (`lower.split(word)`) was the original implementation and
+ * it over-counts: `fixture` fires `fix`, `prefix` fires `fix`, `1500` fires
+ * `500`. Boundaries kill the false positives; the suffix group keeps the
+ * intended variants (`fixes`, `fixed`, `failing`, `deleted`).
+ */
+function countTerm(haystack: string, term: string): number {
+  const trimmed = term.trim()
+  if (trimmed === '') return 0
+  const escaped = trimmed
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+')
+  const startsWord = /^[a-z0-9]/i.test(trimmed)
+  const endsWord = /[a-z0-9]$/i.test(trimmed)
+  const pattern = `${startsWord ? '\\b' : ''}${escaped}(?:s|es|ed|d|ing)?${endsWord ? '\\b' : ''}`
+  return (haystack.match(new RegExp(pattern, 'g')) ?? []).length
+}
+
+/** Count case-insensitive occurrences of each term. */
 function countHits(text: string, words: readonly string[]): number {
   const lower = text.toLowerCase()
   let hits = 0
-  for (const word of words) hits += lower.split(word).length - 1
+  for (const word of words) hits += countTerm(lower, word)
   return hits
 }
 
@@ -91,8 +111,10 @@ export interface Signals {
 
 const REGRESSION_RE = /\b(regression|since|used to|stopped|no longer|was working|yesterday)\b/i
 
-/** Path-like tokens: `a/b`, `a.b.js`, `src/x.ts`, backticked paths. */
-const PATH_RE = /(?:`[^`]+`|\b[\w.-]+\/[\w./-]+|\b[\w-]+\.[a-z0-9]{1,4}\b)/gi
+/** Path-like tokens: `a/b`, `a.b.js`, `src/x.ts`, backticked paths.
+ *  The dotted token must contain a letter, or every decimal number
+ *  (`1.5`, `3.14`) would count as a mentioned path. */
+const PATH_RE = /(?:`[^`]+`|\b[\w.-]+\/[\w./-]+|\b(?=[\w.-]*[a-zA-Z])[\w-]+\.[a-z0-9]{1,4}\b)/gi
 const STACK_RE = /^\s*at\s+.*\(.+\)|^\s*at\s+\S+:\d+:\d+|Traceback \(most recent call last\)/im
 const FILE_LINE_RE = /\b[\w./-]+:\d+(:\d+)?\b/
 

@@ -4,10 +4,10 @@
   "description": "Ponytail X — lazy-senior-dev discipline for DeepSeek Harness: six skills, adaptive modes (lite/full/ultra/surgical/autopsy), model profiles, session metrics.",
   "type": "module",
   "main": "./lib/index.js",
-  "types": "./lib/types/index.d.ts",
+  "types": "./lib/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/types/index.d.ts",
+      "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
     "./package.json": "./package.json"

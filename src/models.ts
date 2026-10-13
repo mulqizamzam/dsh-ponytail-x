@@ -52,26 +52,33 @@ export interface RouterModel {
 /**
  * Compare the catalog profiles against a router /v1/models response. Pure;
  * fetching the response is the caller's job so this stays testable.
+ *
+ * `settingsModelIds` is `null` when the host settings were NOT inspected —
+ * the checks then say so instead of claiming a wiring state nobody verified.
  */
 export function checkProfiles(
   catalog: ModelCatalog,
   routerModels: readonly RouterModel[] | null,
-  settingsModelIds: readonly string[],
+  settingsModelIds: readonly string[] | null,
 ): readonly ModelCheck[] {
   const ids = new Set((routerModels ?? []).map(m => m.id))
+  const settingsKnown = settingsModelIds !== null
   return (['astra', 'fable'] as const).map(name => {
     const profile = catalog[name]
     const advertised = ids.has(profile.model)
     const capabilities = (routerModels ?? []).find(m => m.id === profile.model)?.capabilities
-    const configuredInSettings = settingsModelIds.includes(profile.model)
+    const configuredInSettings = settingsKnown && settingsModelIds.includes(profile.model)
     let note: string
     if (routerModels === null) note = 'router catalog unreachable; not checked'
     else if (!advertised) note = 'not advertised by the router catalog'
     else if (capabilities) {
       note = `ctx ${capabilities.contextWindow ?? '?'}, tools ${capabilities.tools === true ? 'yes' : 'no'}, reasoning ${capabilities.reasoning === true ? 'yes' : 'no'}`
     } else note = 'advertised; capabilities unknown'
-    if (routerModels !== null && advertised && !configuredInSettings) {
+    if (routerModels !== null && advertised && settingsKnown && !configuredInSettings) {
       note += '; not declared in host settings (pass-through id)'
+    }
+    if (routerModels !== null && advertised && !settingsKnown) {
+      note += '; host settings not inspected'
     }
     return { profile: name, provider: profile.provider, model: profile.model, advertised, configuredInSettings, note }
   })
@@ -89,7 +96,9 @@ export async function fetchRouterModels(baseUrl: string): Promise<readonly Route
       signal: AbortSignal.timeout(10_000),
     })
     if (!response.ok) return null
-    const payload = await response.json() as { data?: RouterModel[] }
+    const payload = await response.json() as { data?: RouterModel[] } | RouterModel[]
+    // OpenAI-compatible routers wrap in { data: [...] }; some serve a bare array.
+    if (Array.isArray(payload)) return payload
     return Array.isArray(payload.data) ? payload.data : null
   } catch {
     return null

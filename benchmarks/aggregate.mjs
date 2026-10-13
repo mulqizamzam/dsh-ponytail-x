@@ -8,10 +8,9 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { benchResultsDir } from './bench-paths.mjs'
 
-const ROOT = join(fileURLToPath(new URL('..', import.meta.url)))
-const BENCH = join(ROOT, '..', 'bench')
-const RESULTS = join(BENCH, 'results')
+const RESULTS = benchResultsDir()
 
 function mean(values) {
   if (values.length === 0) return 0

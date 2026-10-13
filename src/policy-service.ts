@@ -61,6 +61,11 @@ export class PonytailXPolicy extends Service {
     this.modelTokens.set(model, (this.modelTokens.get(model) ?? 0) + tokens)
   }
 
+  accountSessionTokens(sessionId: string, tokens: number): void {
+    const state = this.sessions.ensure(sessionId, Date.now())
+    this.sessions.update(sessionId, { approxTokens: state.approxTokens + tokens })
+  }
+
   accountToolCall(sessionId: string): void {
     const state = this.sessions.ensure(sessionId, Date.now())
     this.sessions.update(sessionId, { toolCalls: state.toolCalls + 1 })
@@ -73,10 +78,12 @@ export class PonytailXPolicy extends Service {
    * (NINE_ROUTER_BASE_URL, defaulting to the operator's local router).
    * Reachability is reported honestly: a null catalog means "could not ask".
    */
-  async validateModels(): Promise<readonly ModelCheck[]> {
+  async validateModels(): Promise<{ checks: readonly ModelCheck[]; catalogReachable: boolean; baseUrl: string }> {
     const baseUrl = process.env['NINE_ROUTER_BASE_URL'] ?? 'http://localhost:20128/v1'
     const routerModels = await fetchRouterModels(baseUrl)
-    return checkProfiles(this.config.models, routerModels, [])
+    // null: the settings model list was not inspected this call. Claiming a
+    // wiring state nobody checked is the dishonesty this avoids.
+    return { checks: checkProfiles(this.config.models, routerModels, null), catalogReachable: routerModels !== null, baseUrl }
   }
 
   /** The catalog this bundle ships, merged with config overrides. */
@@ -95,8 +102,11 @@ export class PonytailXPolicy extends Service {
       'Never cut: validation at trust boundaries, error handling that prevents data loss, security, accessibility, anything the user asked for.',
     ]
     const body = lines.join('\n')
+    // Code-point-safe truncation: slice() on a UTF-16 string can split a
+    // surrogate pair and leave a lone surrogate in the injected message.
+    if (this.config.injection.maxChars <= 0) return ''
     return body.length > this.config.injection.maxChars
-      ? `${body.slice(0, this.config.injection.maxChars - 1)}…`
+      ? `${[...body].slice(0, this.config.injection.maxChars - 1).join('')}…`
       : body
   }
 }
