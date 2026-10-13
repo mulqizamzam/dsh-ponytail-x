@@ -8,6 +8,7 @@
  * (never dotted) — the OpenAI-completions provider grammar
  * `^[a-zA-Z0-9_-]+$` rejects dots in `tools[N].function.name`.
  */
+import { ToolArgsError, assertObjectJsonSchema, validateJsonSchemaValue } from '@deepseek-ai/dsh-tools'
 import type { ToolDefinition, ToolRunContext } from '@deepseek-ai/dsh-tools'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 
@@ -29,6 +30,16 @@ function renderText(value: unknown): string {
 }
 
 export function defineTool(spec: PonytailToolSpec): ToolDefinition {
+  // `parameters` is behaviorally load-bearing now that execute() enforces it,
+  // and register() only asserts `output.schema` — nothing would ever check
+  // that it is a schema this harness can actually enforce. Assert once, here,
+  // at definition time. Without it, out-of-subset keywords are silently
+  // IGNORED (`minLength: 3` would validate `{text:'a'}` clean), a mistyped
+  // `type` collapses every call into one misleading root violation that
+  // blames the model, and a null schema throws a raw TypeError. Failing at
+  // definition time turns all three into one loud, correctly-attributed load
+  // failure instead of a permanent silent hole.
+  assertObjectJsonSchema(spec.parameters)
   return {
     name: toolName(spec.name),
     description: spec.description,
@@ -40,6 +51,16 @@ export function defineTool(spec: PonytailToolSpec): ToolDefinition {
       },
     },
     async execute(args: unknown, exec: ToolRunContext): Promise<unknown> {
+      // Model arguments are untrusted input at a trust boundary, and the
+      // registry does NOT check them against `parameters` — it only snapshots
+      // lossless JSON and validates the OUTPUT value. Without this the schema
+      // merely described the call: `{"mode":"ULTRA"}` slipped past the enum
+      // and mutated session state, while `{"mode":123}` was reported to the
+      // model as a successful read. Same validation the harness's own
+      // defineTool performs, and the same error class, so a bad call is
+      // classified INVALID_ARGS instead of a generic failure.
+      const violations = validateJsonSchemaValue(spec.parameters, args, '')
+      if (violations.length > 0) throw new ToolArgsError(violations)
       return spec.execute(args, exec)
     },
   }

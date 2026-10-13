@@ -263,6 +263,91 @@ describe('hooks', () => {
     }
   })
 
+// Proof tests for the unvalidated-input defect: the local defineTool
+  // forwarded `args` straight to the tool body, so each tool's `parameters`
+  // schema only ever DESCRIBED the call to the model and was never ENFORCED.
+  // The harness registry does not validate args either — it only checks
+  // lossless JSON and the output schema. Upstream dsh-tools defineTool does
+  // validate and throws ToolArgsError (INVALID_ARGS).
+  describe('tool argument validation at the trust boundary', () => {
+    const execWith = (ctx: Context, name: string, args: unknown, sessionId: string) =>
+      ctx.tools.execute({
+        signal: new AbortController().signal, callId: 'v', name,
+        arguments: args, agent: { session: { id: sessionId, header: { id: sessionId } } },
+      } as never) as Promise<{
+        isError: boolean
+        content?: { type: string; text: string }[]
+        error?: { message: string; info?: { code?: string } }
+      }>
+
+    it('rejects an enum violation instead of silently mutating session state', async () => {
+      const ctx = await setup()
+      try {
+        const result = await execWith(ctx, 'ponytail-mode', { mode: 'ULTRA' }, 'enum-case')
+        assert.equal(result.isError, true, 'an out-of-enum mode must be an error, not a silent success')
+        assert.match(result.content?.[0]?.text ?? '', /invalid arguments/)
+        assert.equal(
+          ctx.ponytailX.sessions.get('enum-case')?.override ?? null, null,
+          'the rejected call must not have written an override (an entry may still exist: tools/result counts the failed call)',
+        )
+      } finally { await ctx.fiber.dispose() }
+    })
+
+    it('rejects a wrong-typed argument that used to be silently treated as a read', async () => {
+      const ctx = await setup()
+      try {
+        const result = await execWith(ctx, 'ponytail-mode', { mode: 123 }, 'wrong-type')
+        assert.equal(result.isError, true, '{"mode":123} is not a string; it must not report success')
+        assert.match(result.content?.[0]?.text ?? '', /invalid arguments/)
+      } finally { await ctx.fiber.dispose() }
+    })
+
+    it('classifies the rejection as INVALID_ARGS, not a generic tool error', async () => {
+      const ctx = await setup()
+      try {
+        const result = await execWith(ctx, 'ponytail-mode', { mode: 42 }, 'code-check')
+        assert.equal(result.isError, true)
+        assert.equal(result.error?.info?.code, 'INVALID_ARGS')
+      } finally { await ctx.fiber.dispose() }
+    })
+
+    it('enforces a required property', async () => {
+      const ctx = await setup()
+      try {
+        const result = await execWith(ctx, 'ponytail-select', {}, 'required')
+        assert.equal(result.isError, true)
+        assert.match(result.content?.[0]?.text ?? '', /invalid arguments/)
+      } finally { await ctx.fiber.dispose() }
+    })
+
+    it('rejects undeclared properties (additionalProperties: false)', async () => {
+      const ctx = await setup()
+      try {
+        const result = await execWith(ctx, 'ponytail-status', { all: true, bogus: 1 }, 'extra-prop')
+        assert.equal(result.isError, true)
+        assert.match(result.content?.[0]?.text ?? '', /invalid arguments/)
+      } finally { await ctx.fiber.dispose() }
+    })
+
+    it('still accepts the documented calls, including empty-argument tools', async () => {
+      const ctx = await setup()
+      try {
+        for (const [name, args] of [
+          ['ponytail-mode', {}],
+          ['ponytail-mode', { mode: 'ultra' }],
+          ['ponytail-mode', { text: 'rename the button label to Save' }],
+          ['ponytail-select', { text: 'rename the button label to Save' }],
+          ['ponytail-status', {}],
+          ['ponytail-status', { all: true }],
+          ['ponytail-model', {}],
+        ] as const) {
+          const result = await execWith(ctx, name, args, 'valid-calls')
+          assert.equal(result.isError, false, `${name} ${JSON.stringify(args)} must stay valid: ${result.content?.[0]?.text}`)
+        }
+      } finally { await ctx.fiber.dispose() }
+    })
+  })
+
   it('session/event counts turns; session/created opens the entry', async () => {
     const ctx = await setup()
     try {

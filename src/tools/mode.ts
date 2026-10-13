@@ -50,6 +50,16 @@ export function modeTool(service: PonytailXPolicy) {
     parameters: MODE_SCHEMA,
     outputSchema: OUTPUT_SCHEMA,
     execute(args: unknown, exec: ToolRunContext) {
+      // The `parameters` schema is the authoritative boundary: defineTool
+      // validates against it before this runs, so `mode` is already known to
+      // be one of the enum members. The checks below are kept as defence in
+      // depth for direct callers, NOT as the primary gate — do not delete
+      // them as "dead code", they are the only lenient path.
+      //
+      // Note the deliberate divergence: this tool's enum is exact-match, so
+      // "Ultra" is rejected here, while the `/ponytail Ultra` chat gesture
+      // still normalises case/whitespace via parseModeSetting. Same value,
+      // two behaviours, on purpose — the schema is machine-facing.
       const input = (args ?? {}) as { mode?: unknown; text?: unknown }
       const sessionId = sessionIdFromAgent(exec.agent)
       const overrideText = (setting: string | null) => setting ?? 'none'
