@@ -30,12 +30,21 @@ export function wireLlmStream(ctx: Context): void {
     // case the count stays in the per-model map only.
     const sessionId = typeof options.sessionId === 'string' ? options.sessionId : null
     let tokens = 0
-    for await (const raw of next()) {
-      const text = chunkText(raw)
-      if (text) tokens += Math.ceil(text.length / 4)
-      yield raw
+    try {
+      for await (const raw of next()) {
+        const text = chunkText(raw)
+        if (text) tokens += Math.ceil(text.length / 4)
+        yield raw
+      }
+    } finally {
+      // The consumer owns the lifetime of this generator: the agent loop
+      // throws INSIDE its own loop body on abort (`signal.throwIfAborted()`),
+      // and a downstream stream guard may throw too. Either way the generator
+      // is closed at the `yield` and anything after the loop never ran, so an
+      // interrupted turn counted zero tokens even though the harness durably
+      // committed the partial assistant output. Flush on every exit path.
+      svc.accountModelTokens(model, tokens)
+      if (sessionId !== null && tokens > 0) svc.accountSessionTokens(sessionId, tokens)
     }
-    svc.accountModelTokens(model, tokens)
-    if (sessionId !== null && tokens > 0) svc.accountSessionTokens(sessionId, tokens)
   })
 }

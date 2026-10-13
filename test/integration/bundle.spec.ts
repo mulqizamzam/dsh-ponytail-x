@@ -333,6 +333,47 @@ describe('hooks', () => {
     }
   })
 
+  // Proof test for the dead-accounting defect: the flush sat AFTER the
+  // `for await`, so it was unreachable on every early-exit path. The harness's
+  // own consumer throws inside its loop body on abort, which closes this
+  // generator at the `yield` — every user interrupt therefore counted 0
+  // tokens while the partial assistant output was durably committed.
+  // Each case below delivers exactly ONE chunk (8 chars = 2 tokens) and then
+  // stops, so the correct count is 2 — before the fix it was 0.
+  it('llm/stream accounts the partial output when the consumer aborts or breaks early', async () => {
+    const ctx = await setup()
+    try {
+      async function* source() {
+        yield { text: 'abcdefgh' }
+        yield { text: 'ijklmnop' }
+      }
+      // consumer throws mid-stream — what Ctrl-C / the stop button does
+      await assert.rejects(async () => {
+        for await (const _chunk of await waterfall(
+          ctx, 'llm/stream', { model: 'abort-model', sessionId: 'session-abort' }, source,
+        )) {
+          throw new Error('aborted')
+        }
+      }, /aborted/)
+      assert.equal(ctx.ponytailX.modelTokens.get('abort-model'), 2, 'an aborted turn must still be counted')
+      assert.equal(ctx.ponytailX.sessions.get('session-abort')?.approxTokens, 2)
+
+      // consumer breaks out of the loop after the first chunk
+      for await (const _chunk of await waterfall(
+        ctx, 'llm/stream', { model: 'break-model', sessionId: 'session-break' }, source,
+      )) {
+        break
+      }
+      assert.equal(ctx.ponytailX.modelTokens.get('break-model'), 2, 'an early break must still be counted')
+      assert.equal(ctx.ponytailX.sessions.get('session-break')?.approxTokens, 2)
+
+      // a stream nobody reads at all still must not corrupt the ledger
+      assert.equal(ctx.ponytailX.modelTokens.get('abort-model'), 2, 'no double counting from the later runs')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('tools/result counts tool calls under the resolved session', async () => {
     const ctx = await setup()
     try {
