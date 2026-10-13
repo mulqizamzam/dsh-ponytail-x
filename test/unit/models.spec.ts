@@ -49,6 +49,22 @@ describe('checkProfiles', () => {
       assert.doesNotMatch(check.note, /not declared in host settings/)
     }
   })
+  // Proof test for the untrusted-input defect: the catalog body is arbitrary
+  // JSON, and a single `null` row made `.map(m => m.id)` throw a TypeError out
+  // of the ponytail-model tool instead of reporting the catalog it did reach.
+  it('never throws on a malformed catalog row; it reports what it can read', () => {
+    const malformed = [null, 'garbage', 42, {}, { id: 'th/gpt-6-astra' }] as unknown as RouterModel[]
+    const checks = checkProfiles(DEFAULT_CATALOG, malformed, null)
+    assert.equal(checks.find(c => c.profile === 'astra')?.advertised, true, 'the readable row still counts')
+    const fable = checks.find(c => c.profile === 'fable')
+    assert.equal(fable?.advertised, false)
+    assert.equal(fable?.note, 'not advertised by the router catalog')
+  })
+
+  it('reports an all-malformed catalog as reachable-but-empty, not as a crash', () => {
+    const checks = checkProfiles(DEFAULT_CATALOG, [null, null] as unknown as RouterModel[], null)
+    for (const check of checks) assert.equal(check.advertised, false)
+  })
 })
 
 describe('fetchRouterModels', () => {
@@ -70,6 +86,39 @@ describe('fetchRouterModels', () => {
   it('returns null (not a throw) when the catalog cannot be reached', async () => {
     const models = await fetchRouterModels('http://127.0.0.1:1/v1')
     assert.equal(models, null)
+  })
+
+  // A router that answers 200 with a malformed row is still REACHABLE: the
+  // bad entries are dropped, and the result stays a non-null array so the
+  // caller never conflates "unreachable" with "nothing usable in it".
+  it('drops malformed rows but still reports a reachable catalog', async () => {
+    const server = createServer((_req, res) => {
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ data: [null, { id: 'th/gpt-6-astra' }, 'junk', { nope: 1 }] }))
+    })
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address() as { port: number }
+    try {
+      const models = await fetchRouterModels(`http://127.0.0.1:${address.port}/v1`)
+      assert.notEqual(models, null, 'a 200 response is a reachable catalog, not an unreachable one')
+      assert.deepEqual(models?.map(m => m.id), ['th/gpt-6-astra'])
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
+  })
+
+  it('returns null for a 200 body that is not a catalog at all', async () => {
+    const server = createServer((_req, res) => {
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ error: 'not a router' }))
+    })
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address() as { port: number }
+    try {
+      assert.equal(await fetchRouterModels(`http://127.0.0.1:${address.port}/v1`), null)
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
   })
 })
 

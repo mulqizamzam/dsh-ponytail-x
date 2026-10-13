@@ -56,17 +56,28 @@ export interface RouterModel {
  * `settingsModelIds` is `null` when the host settings were NOT inspected —
  * the checks then say so instead of claiming a wiring state nobody verified.
  */
+/**
+ * A router entry is usable only if it is an object carrying a string `id`.
+ * The /v1/models body is untrusted input: a `null` element, a bare string, or
+ * an object without an id must degrade to "not advertised", never to a throw
+ * inside the status tool.
+ */
+function isRouterModel(value: unknown): value is RouterModel {
+  return typeof value === 'object' && value !== null && typeof (value as RouterModel).id === 'string'
+}
+
 export function checkProfiles(
   catalog: ModelCatalog,
   routerModels: readonly RouterModel[] | null,
   settingsModelIds: readonly string[] | null,
 ): readonly ModelCheck[] {
-  const ids = new Set((routerModels ?? []).map(m => m.id))
+  const entries = (routerModels ?? []).filter(isRouterModel)
+  const ids = new Set(entries.map(m => m.id))
   const settingsKnown = settingsModelIds !== null
   return (['astra', 'fable'] as const).map(name => {
     const profile = catalog[name]
     const advertised = ids.has(profile.model)
-    const capabilities = (routerModels ?? []).find(m => m.id === profile.model)?.capabilities
+    const capabilities = entries.find(m => m.id === profile.model)?.capabilities
     const configuredInSettings = settingsKnown && settingsModelIds.includes(profile.model)
     let note: string
     if (routerModels === null) note = 'router catalog unreachable; not checked'
@@ -96,10 +107,16 @@ export async function fetchRouterModels(baseUrl: string): Promise<readonly Route
       signal: AbortSignal.timeout(10_000),
     })
     if (!response.ok) return null
-    const payload = await response.json() as { data?: RouterModel[] } | RouterModel[]
+    const payload = await response.json() as unknown
     // OpenAI-compatible routers wrap in { data: [...] }; some serve a bare array.
-    if (Array.isArray(payload)) return payload
-    return Array.isArray(payload.data) ? payload.data : null
+    const raw = Array.isArray(payload)
+      ? payload
+      : (payload as { data?: unknown } | null | undefined)?.data
+    if (!Array.isArray(raw)) return null
+    // Keep only well-formed entries: a reachable router that serves one
+    // malformed row is still a reachable router, so this returns an array
+    // (possibly empty) rather than null, and never a list that throws later.
+    return raw.filter(isRouterModel)
   } catch {
     return null
   }
