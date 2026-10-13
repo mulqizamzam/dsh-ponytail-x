@@ -268,8 +268,17 @@ export function resolveMode(input: {
       : { setting: input.gesture, mode: input.gesture, source: 'gesture', reasons: [`/ponytail gesture: ${input.gesture}`] }
   }
   const decision = selectMode(extractSignals(input.text), input.thresholds ?? DEFAULT_THRESHOLDS)
-  if (decision.mode === 'full' && decision.scores.reasons.length === 0) {
-    return { setting: 'full', mode: 'full', source: 'default', reasons: ['no signal fired; default level'] }
+  // `full` from selectMode is its own fall-through: nothing crossed a
+  // threshold. Resolution step 4 is the CONFIGURED default, not the literal
+  // 'full' — hardcoding it here is what made `defaultMode` a dead config key:
+  // an operator setting `defaultMode: ultra` silently kept getting `full`.
+  if (decision.mode === 'full') {
+    return {
+      setting: input.defaultMode,
+      mode: input.defaultMode,
+      source: 'default',
+      reasons: [`no signal fired; config default ${input.defaultMode}`],
+    }
   }
   return {
     setting: decision.mode,

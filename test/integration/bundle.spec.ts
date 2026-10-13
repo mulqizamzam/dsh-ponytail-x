@@ -222,6 +222,47 @@ describe('hooks', () => {
     }
   })
 
+  // End-to-end proof for the dead-config-key defect: with `defaultMode` set
+  // to a non-full mode, a signal-free step must run in that mode. Before the
+  // fix resolveMode hardcoded 'full' and the configured value never reached
+  // the injected block or the session record.
+  it('agent/pre-step honours a configured non-full defaultMode', async () => {
+    const signalFree = 'update the total row in src/orders/Table.tsx and src/api/orders.ts'
+    const ctx = await setup({ defaultMode: 'autopsy' })
+    try {
+      assert.equal(ctx.ponytailX.config.defaultMode, 'autopsy', 'the config value must survive resolution')
+      const decision = await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage(signalFree)]),
+        async () => ({ kind: 'enter', messages: [userMessage(signalFree)] }),
+      )
+      const messages = (decision as { messages: { source?: { kind?: string } }[] }).messages
+      const injection = messages.filter(m => m.source?.kind === 'ponytail-x')
+      assert.equal(injection.length, 1, 'exactly one injection')
+      assert.match(JSON.stringify(injection[0]), /Active mode: autopsy/)
+      assert.equal(ctx.ponytailX.sessions.get('session-int')?.mode, 'autopsy')
+      assert.equal(ctx.ponytailX.sessions.get('session-int')?.source, 'default')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('the shipped defaultMode: full still resolves to full', async () => {
+    const signalFree = 'update the total row in src/orders/Table.tsx and src/api/orders.ts'
+    const ctx = await setup()
+    try {
+      const decision = await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage(signalFree)]),
+        async () => ({ kind: 'enter', messages: [userMessage(signalFree)] }),
+      )
+      const messages = (decision as { messages: { source?: { kind?: string } }[] }).messages
+      assert.match(JSON.stringify(messages.filter(m => m.source?.kind === 'ponytail-x')[0]), /Active mode: full/)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('session/event counts turns; session/created opens the entry', async () => {
     const ctx = await setup()
     try {

@@ -144,6 +144,37 @@ describe('resolveMode', () => {
     assert.equal(resolved.source, 'default')
     assert.equal(resolved.mode, 'full')
   })
+
+  // Proof test for the dead-config-key defect: resolveMode accepted, typed
+  // and received `defaultMode`, then hardcoded 'full' in the fall-through
+  // branch. Every operator-set `defaultMode` other than 'full' was accepted,
+  // validated, logged, and then ignored.
+  it('falls back to the CONFIGURED defaultMode, not a hardcoded full', () => {
+    const resolved = resolveMode({
+      ...base,
+      text: 'update the total row in src/orders/Table.tsx and src/api/orders.ts',
+      defaultMode: 'autopsy',
+    })
+    assert.equal(resolved.mode, 'autopsy', `configured defaultMode was ignored (got ${resolved.mode})`)
+    assert.equal(resolved.setting, 'autopsy')
+    assert.equal(resolved.source, 'default')
+  })
+
+  it('keeps explicit and gesture ahead of the configured defaultMode', () => {
+    const signalFree = 'update the total row in src/orders/Table.tsx'
+    const explicit = resolveMode({ explicit: 'surgical', gesture: 'ultra', text: signalFree, defaultMode: 'autopsy' })
+    assert.equal(explicit.mode, 'surgical')
+    assert.equal(explicit.source, 'explicit')
+    const gesture = resolveMode({ explicit: null, gesture: 'lite', text: signalFree, defaultMode: 'autopsy' })
+    assert.equal(gesture.mode, 'lite')
+    assert.equal(gesture.source, 'gesture')
+  })
+
+  it('a fired signal still outranks the configured defaultMode', () => {
+    const resolved = resolveMode({ ...base, text: 'fix the failing test in src/a.test.js', defaultMode: 'lite' })
+    assert.equal(resolved.mode, 'surgical')
+    assert.equal(resolved.source, 'adaptive')
+  })
 })
 
 describe('thresholds', () => {
