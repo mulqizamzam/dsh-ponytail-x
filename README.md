@@ -31,11 +31,14 @@ metrics — all through public plugin seams. No DSH core is modified.
 
 Selected per step, first match wins:
 
-1. explicit override — `ponytail-mode` tool (`{ "mode": "ultra" }`, `"off"` disables)
-2. user gesture — `/ponytail ultra`, `/ponytail-core surgical`, or `stop ponytail`
+1. explicit override — `ponytail-mode` tool (`{ "mode": "ultra" }`, `"off"` disables), session-sticky
+2. user gesture — `/ponytail ultra`, `/ponytail-core surgical`, or `stop ponytail`, recorded as that
+   same session override, so it holds past the step it arrived in
 3. adaptive scoring — deterministic signals over the step's newest user message
    (complexity, risk, failure, uncertainty)
 4. the configured default (`full`)
+
+1–2 are instructions and persist until countermanded; 3–4 are inference and are re-scored every step.
 
 ### Tools (namespace `ponytail-`)
 

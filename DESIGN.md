@@ -81,11 +81,18 @@ Modes: `lite`, `full`, `ultra` (upstream parity) plus `surgical`, `autopsy` (X e
 | `surgical` | bug-fix locus known (failing test, error text, named function) | minimal diff at root cause, proof test first, no refactor |
 | `autopsy` | failure analysis: repeated failures, regression, postmortem ask | root-cause + timeline + prevention + postmortem artifact |
 
-Resolution order per step (deterministic, unit-tested):
-1. explicit override via `ponytail-mode` tool (session-sticky) or `off`;
-2. user gesture `/ponytail-<mode>` in the step's user messages;
+Resolution order (deterministic, unit-tested):
+1. explicit override via the `ponytail-mode` tool, session-sticky, `off` included;
+2. user gesture `/ponytail-<mode>` or `stop ponytail`, promoted into that same override so it
+   outlives the step it arrived in — the host delivers a turn's user message to step 1 only
+   (`agent-loop/src/agent.ts:311/364` with `inbox.ts:110-112`), so a gesture read straight from
+   the payload covers exactly one step and then silently reverts to the default;
 3. adaptive scoring over the step's newest user message (`selectMode(signals) -> {mode, scores, reasons}`);
 4. config `defaultMode` (default `full`).
+
+Steps 1–2 are instructions, so they persist until countermanded; steps 3–4 are inference, so they
+are re-derived on every step. A newly typed gesture outranks the stored override, which is what
+keeps mode switching working.
 
 Adaptive scoring is a pure function of extracted signals: message length, mentioned paths
 count, risk keywords (security, money, migration, data loss, production), failure keywords

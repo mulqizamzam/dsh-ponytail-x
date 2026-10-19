@@ -63,8 +63,19 @@ export function wireAgentPreStep(ctx: Context): void {
 
     const text = newestUserText(payload.messages ?? [])
     const gesture = gestureMode(text)
+    // A gesture is a user INSTRUCTION, not a per-step inference, so it must
+    // outlive the step it arrived in. On its own it does not: the host claims a
+    // turn's user message only on 'next-turn' (agent-loop/src/agent.ts:311
+    // starts there and :364 switches to 'next-step'; inbox.ts:111 pushes from
+    // next-turn only for that target), so every later step of the turn arrives
+    // with no message, gestureMode('') is null, and resolution falls through to
+    // the config default. Record the gesture through the same override the
+    // `ponytail-mode` tool writes. A freshly typed gesture is still passed as
+    // the gesture rather than the stored override, so switching modes works and
+    // the new gesture outranks the one it replaces.
+    if (gesture !== null) svc.overrideSetting(sessionId, gesture)
     const resolved = resolveMode({
-      explicit: state.override,
+      explicit: gesture === null ? state.override : null,
       gesture,
       text,
       defaultMode: svc.config.defaultMode,

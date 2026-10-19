@@ -222,6 +222,75 @@ describe('hooks', () => {
     }
   })
 
+  // Gesture stickiness. A gesture is a user INSTRUCTION, not a per-step
+  // inference: it must outlive the step it arrived in. It does not, on its own,
+  // because the host claims the turn's user message only on 'next-turn'
+  // (agent-loop/src/agent.ts:311 starts at 'next-turn', :364 switches to
+  // 'next-step'; inbox.ts:111 pushes from next-turn only when the target is
+  // 'next-turn'). Every later step of the turn therefore arrives with an empty
+  // message list, gestureMode('') returns null, and resolution silently falls
+  // through to the config default. Both directions hurt: an escalation is lost
+  // mid-turn, and `stop ponytail` re-arms the injection two steps later.
+  it('a mode gesture survives the step it arrived in', async () => {
+    const ctx = await setup({ defaultMode: 'full' })
+    try {
+      const first = await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage('/ponytail ultra audit this repo')], 1, 1),
+        async () => ({ kind: 'enter', messages: [userMessage('/ponytail ultra audit this repo')] }),
+      )
+      assert.match(JSON.stringify(first), /Active mode: ultra/, 'step 1 must run the gesture')
+      const second = await waterfall(
+        ctx, 'agent/pre-step', preStepPayload([], 1, 2),
+        async () => ({ kind: 'enter', messages: [] }),
+      )
+      assert.match(JSON.stringify(second), /Active mode: ultra/, 'step 2 has no user message and must still run ultra')
+      assert.equal(ctx.ponytailX.sessions.get('session-int')?.mode, 'ultra')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('stop ponytail stays off for the rest of the turn', async () => {
+    const ctx = await setup()
+    try {
+      const injectionCount = (decision: unknown) => (decision as { messages: { source?: { kind?: string } }[] }).messages
+        .filter(message => message.source?.kind === 'ponytail-x').length
+      const first = await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage('stop ponytail')], 1, 1),
+        async () => ({ kind: 'enter', messages: [userMessage('stop ponytail')] }),
+      )
+      assert.equal(injectionCount(first), 0, 'step 1 must not inject')
+      const second = await waterfall(
+        ctx, 'agent/pre-step', preStepPayload([], 1, 2),
+        async () => ({ kind: 'enter', messages: [] }),
+      )
+      assert.equal(injectionCount(second), 0, 'step 2 must not re-arm injection after the user said stop')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('a later gesture outranks the one it replaces', async () => {
+    const ctx = await setup()
+    try {
+      await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage('/ponytail ultra one')], 1, 1),
+        async () => ({ kind: 'enter', messages: [] }),
+      )
+      const second = await waterfall(
+        ctx, 'agent/pre-step',
+        preStepPayload([userMessage('/ponytail lite two')], 2, 1),
+        async () => ({ kind: 'enter', messages: [userMessage('/ponytail lite two')] }),
+      )
+      assert.match(JSON.stringify(second), /Active mode: lite/, 'the newest gesture must win, not the sticky one it replaces')
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
   // End-to-end proof for the dead-config-key defect: with `defaultMode` set
   // to a non-full mode, a signal-free step must run in that mode. Before the
   // fix resolveMode hardcoded 'full' and the configured value never reached

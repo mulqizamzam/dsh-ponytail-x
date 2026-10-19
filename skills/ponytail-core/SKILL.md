@@ -67,11 +67,13 @@ Modes: `lite`, `full` (default), `ultra`, `surgical`, `autopsy`.
 Selected per step, first match wins:
 
 1. Explicit override — a mode set for the session (or `off`, which disables Ponytail X entirely).
-2. User gesture `/ponytail-<mode>` in the step's user messages.
+2. User gesture `/ponytail-<mode>` in the step's user messages, recorded as that same session override.
 3. Adaptive scoring over the step's newest user message — complexity, risk and failure signals.
 4. The configured default, `full`.
 
-Each step re-selects, so one step can run a different mode than the last. `off` stays off until an explicit override or gesture re-arms it.
+Steps 1–2 are your instructions, so they hold until you countermand them: `off` stays off, and a
+level stays until you name another one. Steps 3–4 are inference, re-scored on every step, so
+without an instruction the level can move as the work moves.
 
 ## Evidence (Ponytail X)
 
