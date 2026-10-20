@@ -16,7 +16,7 @@
       config:
         defaultMode: full
         injection:
-          enabled: true
+          enabled: false
           maxChars: 1200
         complexity:
           ultraAt: 6
