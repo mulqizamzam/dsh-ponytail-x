@@ -24,10 +24,10 @@
         models:
           astra:
             provider: nine-router
-            model: th/gpt-6-astra
+            model: oc/minimax-m3.1-flash-free(thinking)
           fable:
             provider: nine-router
-            model: th/claude-fable-5.1
+            model: oc/minimax-m3.1-flash-free(thinking)
     - id: ponytail-x-skills
       name: '@deepseek-ai/dsh-skill-filesystem'
       config:
