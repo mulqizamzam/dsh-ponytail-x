@@ -156,7 +156,7 @@ Configuration fields:
 
 ### Legacy injection.disabled key
 
-The compatibility fix in this branch accepts **injection.disabled** and converts it to the canonical **injection.enabled** setting:
+The configuration resolver accepts **injection.disabled** as a compatibility alias and converts it to the canonical **injection.enabled** setting:
 
 - **disabled: true** means injection is disabled.
 - **disabled: false** means injection is enabled.
