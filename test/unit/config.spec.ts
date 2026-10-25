@@ -37,7 +37,7 @@ describe('resolveConfig', () => {
   it('validates the type of the legacy injection.disabled alias', () => {
     assert.throws(
       () => resolveConfig({ injection: { disabled: 'yes' } }),
-      /injection\\.disabled must be a boolean/,
+      /injection\.disabled must be a boolean/,
     )
   })
 
