@@ -31,6 +31,8 @@ describe('resolveConfig', () => {
 
   it('accepts the legacy injection.disabled alias and normalizes it', () => {
     assert.equal(resolveConfig({ injection: { disabled: true } }).injection.enabled, false)
+    // Simulate a schema-materialized enabled default; the legacy key still wins.
+    assert.equal(resolveConfig({ injection: { disabled: true, enabled: true } }).injection.enabled, false)
     assert.equal(resolveConfig({ injection: { disabled: false } }).injection.enabled, true)
   })
 
