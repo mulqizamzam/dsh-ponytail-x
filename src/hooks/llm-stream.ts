@@ -1,0 +1,50 @@
+/**
+ * llm/stream hook — approximate output-token accounting.
+ *
+ * Verified contract: `llm/stream` is a WATERFALL over the token stream; a
+ * listener MUST call next() and pass chunks through. Chunks carry no exact
+ * usage, so the count is an approximation (chars/4) and is labelled as such
+ * wherever it is reported. The stream itself is never altered.
+ */
+import type { Context } from '@deepseek-ai/cordis'
+import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import type { PonytailXPolicy } from '../policy-service.ts'
+
+function chunkText(chunk: StreamChunk): string {
+  const c = chunk as unknown as { text?: unknown; content?: unknown; delta?: unknown }
+  if (typeof c.text === 'string') return c.text
+  if (typeof c.content === 'string') return c.content
+  if (typeof c.delta === 'string') return c.delta
+  return ''
+}
+
+export function wireLlmStream(ctx: Context): void {
+  ctx.on('llm/stream', async function* (
+    options: GenerateOptions,
+    next: () => AsyncIterable<StreamChunk>,
+  ): AsyncIterable<StreamChunk> {
+    const svc = ctx.ponytailX as PonytailXPolicy
+    const model = options.model ?? 'unknown'
+    // The agent loop stamps every loop-built request with the session id
+    // (GenerateOptions.sessionId); one-shot callers may omit it, in which
+    // case the count stays in the per-model map only.
+    const sessionId = typeof options.sessionId === 'string' ? options.sessionId : null
+    let tokens = 0
+    try {
+      for await (const raw of next()) {
+        const text = chunkText(raw)
+        if (text) tokens += Math.ceil(text.length / 4)
+        yield raw
+      }
+    } finally {
+      // The consumer owns the lifetime of this generator: the agent loop
+      // throws INSIDE its own loop body on abort (`signal.throwIfAborted()`),
+      // and a downstream stream guard may throw too. Either way the generator
+      // is closed at the `yield` and anything after the loop never ran, so an
+      // interrupted turn counted zero tokens even though the harness durably
+      // committed the partial assistant output. Flush on every exit path.
+      svc.accountModelTokens(model, tokens)
+      if (sessionId !== null && tokens > 0) svc.accountSessionTokens(sessionId, tokens)
+    }
+  })
+}

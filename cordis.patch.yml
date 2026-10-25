@@ -1,0 +1,39 @@
+# Ponytail X bundle patch.
+#
+# Shape follows the verified entry-list schema (dsh --dump-config-schema;
+# cf. @deepseek-ai/dsh-experimental-inspector):
+#   - insert the policy service (the plugin entry; Cordis Service pattern,
+#     same insertion shape as dsh-500-ai-agent / fable-5-1 in the web profile);
+#   - insert an isolated skill-filesystem instance for the six skills.
+#
+# The skills directory is resolved from this package's own location through
+# createRequire(baseUrl), the same portable pattern the dsh-agent-preset base
+# layer uses, so the bundle stays relocatable (no absolute install paths).
+
+- insert:
+    - id: ponytail-x
+      name: dsh-ponytail-x
+      config:
+        defaultMode: full
+        injection:
+          enabled: false
+          maxChars: 1200
+        complexity:
+          ultraAt: 6
+          liteAt: 1
+        models:
+          astra:
+            provider: nine-router
+            model: oc/minimax-m3.1-flash-free(thinking)
+          fable:
+            provider: nine-router
+            model: oc/minimax-m3.1-flash-free(thinking)
+    - id: ponytail-x-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: ponytail-x
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js >-
+            process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-ponytail-x/package.json')),
+            'skills')
