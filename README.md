@@ -1,210 +1,228 @@
 # Ponytail X
 
-Lazy senior dev mode for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-— a fork of [ponytail](https://github.com/DietrichGebert/ponytail) (MIT, © 2026
-Dietrich Gebert), specialized for the DSH plugin system.
+**Adaptive senior-engineering discipline for DeepSeek Harness (DSH).**
 
-> He says nothing. He writes one line. It works.
+Ponytail X is a DSH plugin fork of [ponytail](https://github.com/DietrichGebert/ponytail). It combines focused engineering workflows with deterministic mode selection, session-scoped controls, model-profile checks, and session metrics. It uses DSH's plugin and skill systems; it does not modify DSH core.
 
-Ponytail X keeps the upstream rule set verbatim (the ladder, the never-cut
-list, the skip-and-risk closing lines) and adds what a DSH agent needs: six
-skills on the native `skill-filesystem` provider, five adaptive workflow
-modes selected per step, two configured agent model profiles, and session
-metrics — all through public plugin seams. No DSH core is modified.
+## What it does
 
-## What ships
+- Selects a workflow mode from task text and configurable thresholds.
+- Supports explicit session overrides so a chosen mode persists across steps.
+- Provides six focused skills for tracing, debugging, implementation discipline, proof, and invariants.
+- Registers four tools for mode control, mode preview, model checks, and session metrics.
+- Injects a short mode instruction before agent steps when injection is enabled.
+- Rejects unknown configuration keys with a path-specific error instead of silently ignoring typos.
 
-| Piece | What it is |
-|---|---|
-| `skills/ponytail-core` | The upstream rule set (verbatim) + modes + evidence lines |
-| `skills/ponytail-trace` | Map the code before touching it |
-| `skills/ponytail-debug` | Surgical-mode debugging: reproduce → localize → root cause → guard |
-| `skills/ponytail-diff` | Smallest complete diff + scope discipline |
-| `skills/ponytail-proof` | Proof tests, honest verification, report lines |
-| `skills/ponytail-invariant` | Hold the repo's contract; adversarial checklist |
-| Policy service (`ponytail-` tools) | Mode resolution, adaptive selection, model validation, metrics |
-| `cordis.patch.yml` | The bundle patch inserting both entries |
+## Workflow modes
 
-### Modes
+| Mode | Use it for | Working rule |
+| --- | --- | --- |
+| **lite** | Small, bounded tasks | Solve the task with the smallest complete change and state important options skipped. |
+| **full** | General development; default mode | Follow the engineering ladder, finish related callers/tests/fixtures, and protect the never-cut requirements. |
+| **ultra** | Complex, risky, or multi-step work | Challenge unnecessary scope and perform additional verification passes. |
+| **surgical** | A known bug or failing test | Reproduce first, find the root cause, make the smallest complete fix, and add a regression test. Avoid unrelated refactoring. |
+| **autopsy** | Regressions, incidents, repeated failures | Build a timeline, identify root cause, define prevention, and write a postmortem artifact. |
 
-`lite` · `full` (default) · `ultra` · `surgical` · `autopsy`
+Adaptive selection is deterministic: the same task text and thresholds produce the same scores. It uses signals such as risk and failure terms, mentioned file paths, stack traces, multi-step phrasing, and uncertainty. The scoring rules are implementation heuristics, not a substitute for engineering judgment.
 
-Selected per step, first match wins:
+### Mode resolution and overrides
 
-1. explicit override — `ponytail-mode` tool (`{ "mode": "ultra" }`, `"off"` disables), session-sticky
-2. user gesture — `/ponytail ultra`, `/ponytail-core surgical`, or `stop ponytail`, recorded as that
-   same session override, so it holds past the step it arrived in
-3. adaptive scoring — deterministic signals over the step's newest user message
-   (complexity, risk, failure, uncertainty)
-4. the configured default (`full`)
+The plugin resolves a step's mode in this order:
 
-1–2 are instructions and persist until countermanded; 3–4 are inference and are re-scored every step.
+1. A session override set with the mode tool.
+2. A mode gesture in the newest user message.
+3. Adaptive scoring of that message.
+4. The configured default mode.
 
-### Tools (namespace `ponytail-`)
+Explicit overrides and gestures persist for the session until changed. Adaptive selections are reconsidered on each step.
+
+Supported gestures include:
+
+    /ponytail lite
+    /ponytail full
+    /ponytail ultra
+    /ponytail surgical
+    /ponytail autopsy
+    /ponytail off
+    stop ponytail
+
+The matching **/ponytail-skill mode** form is also recognized. Use **off** to disable Ponytail X injection for the current session; it is a runtime setting, not a valid value for **defaultMode**.
+
+## Included skills
+
+| Skill | Purpose |
+| --- | --- |
+| **ponytail-core** | Core engineering rules, mode guidance, and evidence requirements. |
+| **ponytail-trace** | Map the code and call paths before changing them. |
+| **ponytail-debug** | Reproduce, localize, fix, and guard against a defect. |
+| **ponytail-diff** | Keep the change small without omitting required work. |
+| **ponytail-proof** | Design proof tests and report verification honestly. |
+| **ponytail-invariant** | Protect contracts and challenge likely regressions. |
+
+The skills are provided by DSH's **@deepseek-ai/dsh-skill-filesystem** plugin under the **ponytail-x** provider name.
+
+## Tools
 
 | Tool | Purpose |
-|---|---|
-| `ponytail-mode` | Read/set the session mode; preview an adaptive pick with `text` |
-| `ponytail-select` | Classify a task text into a mode with the score board (pure) |
-| `ponytail-model` | Validate the configured model profiles against the live router catalog |
-| `ponytail-status` | Session metrics: mode, turns, steps, tool calls, elapsed, tokens |
+| --- | --- |
+| **ponytail-mode** | Read the current mode or set a session-sticky override. Pass **text** to preview adaptive scoring without changing the override. |
+| **ponytail-select** | Classify task text and return the selected mode, score board, and reasons. It is deterministic and does not change session state. |
+| **ponytail-model** | Compare configured model profiles with the live router catalog. |
+| **ponytail-status** | Report session mode and metrics such as turns, steps, tool calls, elapsed time, and approximate token counts. |
+
+The exact way to invoke tools depends on the DSH client in use. Tool names use the **ponytail-** prefix.
+
+## Requirements
+
+- DeepSeek Harness **0.2.0-rc.2 or newer**.
+- Node.js **22.19.x or newer in the 22 line, or 24 or newer**.
+- The DSH peer packages available to the profile that loads the plugin.
 
 ## Install
 
-Requirements: DSH `>=0.2.0-rc.2`, Node `^22.19.0 \|\| >=24`.
+From the DSH workspace, link the local plugin to the profile you want to use. Replace the path with the actual checkout location:
 
-```bash
-# from your DSH home (default: <workspace>/.dsh)
-dsh plugin --profile web add link:/path/to/ponytail-x
-```
+    dsh plugin --profile web add link:/path/to/dsh-ponytail-x
 
-`dsh plugin add` does the three things the compose needs: the link
-dependency, the `dsh.profile.bundles` entry, and the install. The bundle's
-own `cordis.patch.yml` then inserts the policy entry and the isolated
-skill-filesystem instance on the next boot.
+The plugin command installs the link dependency and registers the bundle in the profile. On the next boot, the bundle's **cordis.patch.yml** inserts the policy service and the isolated skill-filesystem provider.
 
-Manual equivalent (what `dsh plugin add` writes):
+To install it into another profile, replace **web** with that profile name.
 
-```jsonc
-// <DSH_HOME>/profiles/web/package.json
-{
-  "dependencies": { "dsh-ponytail-x": "link:/path/to/ponytail-x" },
-  "dsh": { "profile": { "bundles": ["…", "dsh-ponytail-x"] } }
-}
-```
+### Verify the installation
 
-then `pnpm install` in that profile directory.
+Run these from the same DSH workspace:
 
-### Verifying the install
+    dsh --dump-config --profile web | grep ponytail
+    dsh --dump-config-schema --profile web
+    dsh headless "load the skill ponytail-core and quote its first line"
 
-```bash
-dsh --dump-config --profile web | grep ponytail        # both entries present
-dsh --dump-config-schema --profile web                 # composed config validates
-dsh headless "load the skill ponytail-core and quote its first line"
-```
+The first command should show the Ponytail X service and its skill provider. The schema dump checks the composed profile configuration. The headless command checks that the skill can be loaded.
 
-## Build and test (from a checkout)
+### Manual profile setup
 
-```bash
-node scripts/link-deps.mjs   # link: peer/dev deps into the harness checkout
-npm run build                # tsc -b -> lib/
-npm test                     # node:test via tsx: unit + integration + e2e
-```
+Use the plugin command above where possible. The equivalent profile package configuration contains a local link dependency and the bundle name:
 
-`scripts/link-deps.mjs` pins a workspace-local pnpm store; a bare
-`pnpm install` fails in sandboxes where the parent workspace `storeDir` is
-unwritable.
+    {
+      "dependencies": {
+        "dsh-ponytail-x": "link:/path/to/dsh-ponytail-x"
+      },
+      "dsh": {
+        "profile": {
+          "bundles": ["...", "dsh-ponytail-x"]
+        }
+      }
+    }
 
-## Model configuration (GPT 6 ASTRA / FABLE 5.1)
-
-The two profiles are configured with their **real, verified router ids**
-(probed live against the operator's 9Router `GET /v1/models`):
-
-| Profile | Provider | Model | Router capabilities |
-|---|---|---|---|
-| `astra` | `nine-router` | `th/gpt-6-astra` | ctx 272k, tools, reasoning (thinkingFormat `openai`) |
-| `fable` | `nine-router` | `th/claude-fable-5.1` | ctx 1M, tools, reasoning (thinkingFormat `claude-budget`) |
-
-Nothing here invents a model id or endpoint. The plugin does not re-route
-requests itself — model selection is host configuration, and the native
-mechanism is `agent-default-model` in the profile patch or settings:
-
-```yaml
-# <DSH_HOME>/profiles/<profile>/cordis.patch.yml — pick the agent model
-- id: agent-default-model
-  name: "@deepseek-ai/dsh-agent-default-model"
-  config:
-    provider: nine-router
-    model: th/gpt-6-astra          # or th/claude-fable-5.1
-    reasoningEffort: max
-```
-
-`ponytail-model` validates both ids against the live router and reports
-`advertised` / `not advertised` / capabilities honestly. **Known state at
-ship time:** both ids are advertised by the router catalog, but the `th/`
-route currently answers `No active credentials for provider: tokenharbor`
-for chat completions; the operator's working default
-(`oc/mimo-v2.6-flash-free(xhigh)`) is used for the shipped benchmark. When
-the credentials come back, no plugin change is needed — the ids are already
-wired.
+Then run **pnpm install** in the profile directory. Preserve the profile's existing dependencies and bundle entries when applying this manually.
 
 ## Configuration
 
-Bundle defaults, overridable from the patch entry `ponytail-x`:
+The bundle defaults are declared in **src/config/schema.ts**. The bundled patch in **cordis.patch.yml** overrides some of them for the installed profile.
 
-```yaml
-- insert:
-    - id: ponytail-x
-      name: dsh-ponytail-x
+    - insert:
+        - id: ponytail-x
+          name: dsh-ponytail-x
+          config:
+            defaultMode: full
+            injection:
+              enabled: false
+              maxChars: 1200
+            complexity:
+              ultraAt: 6
+              liteAt: 1
+            models:
+              astra:
+                provider: nine-router
+                model: oc/minimax-m3.1-flash-free(thinking)
+              fable:
+                provider: nine-router
+                model: oc/minimax-m3.1-flash-free(thinking)
+
+Configuration fields:
+
+| Field | Default in schema | Meaning |
+| --- | --- | --- |
+| **defaultMode** | **full** | Fallback mode; allowed values are **lite**, **full**, **ultra**, **surgical**, and **autopsy**. |
+| **injection.enabled** | **true** | Whether to append Ponytail X's short instructions message at each admitted agent step. |
+| **injection.maxChars** | **1200** | Maximum length of the injected message; non-positive values render an empty message. |
+| **complexity.ultraAt** | **6** | Score at which adaptive selection can choose **ultra**. |
+| **complexity.liteAt** | **1** | Score at which a bounded task can choose **lite**. |
+| **models.astra.provider** | **nine-router** | Provider recorded for the Astra model profile. |
+| **models.astra.model** | **th/gpt-6-astra** | Schema fallback model ID for Astra. |
+| **models.fable.provider** | **nine-router** | Provider recorded for the Fable model profile. |
+| **models.fable.model** | **th/claude-fable-5.1** | Schema fallback model ID for Fable. |
+
+**Important:** the shipped **cordis.patch.yml** sets **injection.enabled: false**, so the service and tools load but per-step instructions are not injected by default. Set it to **true** in that patch if you want the mode instructions enabled globally. The defaults in the table apply when no override is supplied.
+
+### Legacy injection.disabled key
+
+The compatibility fix in this branch accepts **injection.disabled** and converts it to the canonical **injection.enabled** setting:
+
+- **disabled: true** means injection is disabled.
+- **disabled: false** means injection is enabled.
+- If both **enabled** and **disabled** are present, **disabled** takes precedence.
+
+Use **enabled** for new configurations. **disabled** exists only to keep older profile configuration from failing while it is migrated. Other unknown keys are still rejected with the full field path.
+
+**defaultMode: off** is not supported. To turn injection off only for one session, use **ponytail-mode** with **mode: off** or the **/ponytail off** gesture.
+
+## Model profiles and routing
+
+Ponytail X stores two model profiles, **astra** and **fable**, and exposes **ponytail-model** to check those IDs against the router's live **/v1/models** catalog. The schema fallback IDs are shown above; the shipped patch currently overrides both profiles to **oc/minimax-m3.1-flash-free(thinking)**.
+
+These profiles are **not a separate routing engine**. Ponytail X does not change the model used by the main agent. To change that agent's model, configure DSH's **agent-default-model** service in the profile or its settings. For example:
+
+    - id: agent-default-model
+      name: "@deepseek-ai/dsh-agent-default-model"
       config:
-        defaultMode: full          # lite | full | ultra | surgical | autopsy
-        injection:
-          enabled: true            # the per-step instructions message
-          maxChars: 1200
-        complexity:
-          ultraAt: 6               # adaptive score threshold for ultra
-          liteAt: 1                # adaptive score threshold for lite
-        models:
-          astra: { provider: nine-router, model: th/gpt-6-astra }
-          fable: { provider: nine-router, model: th/claude-fable-5.1 }
-```
+        provider: nine-router
+        model: your-provider-model-id
+        reasoningEffort: max
 
-For compatibility with older profile configs, `injection.disabled: true` is also
-accepted and normalized to `injection.enabled: false`. Prefer `enabled` in
-new configs; when both keys are present, `disabled` takes precedence so an
-older setting cannot be overridden by the schema's default for `enabled`.
+Replace the provider and model with IDs supported by your own router; the example is a shape, not a claim that a particular ID is available. **ponytail-model** reads the live router catalog and reports when the catalog cannot be reached or a profile ID is not advertised.
 
-Config is fail-loud: every rejection names the exact field path
-(`injection.enabled must be a boolean`).
+The router base URL used by the model check is **NINE_ROUTER_BASE_URL**; if unset, the service uses **http://localhost:20128/v1**.
+
+## Build and test
+
+From a checkout that has access to the DSH workspace and peer dependencies:
+
+    node scripts/link-deps.mjs
+    npm run build
+    npm test
+
+Useful focused test commands:
+
+    npm run test:unit
+    npm run test:integration
+    npm run test:e2e
+
+The build uses TypeScript project build mode. The test script uses Node's test runner through **tsx**. The dependency-link helper is intended for the workspace layout this plugin was developed against; inspect it before adapting it to a different workspace.
 
 ## Benchmark
 
-`benchmarks/run-benchmark.mjs` runs three conditions — `baseline` (no
-skills), `upstream` (upstream ponytail skills via skill-filesystem),
-`ponytail-x` (this bundle) — on the same fixture
-(`benchmarks/fixtures/pricing-fix`: one seeded double-discount bug) with
-identical task text, identical model (`nine-router/ds/deepseek-v4-flash`), and identical acceptance criteria
-(acceptance suite green, existing suite green, diff limited to `src/`).
-Metrics: correctness, tokens, tool calls, duration, diff size.
+The recorded benchmark in **benchmarks/RESULTS.md** is a small historical experiment dated **2026-10-11**. It compares baseline, upstream ponytail, and Ponytail X on three runs per condition against the same seeded pricing bug and acceptance criteria.
 
-```bash
-node benchmarks/run-benchmark.mjs --single baseline 1   # one run, foreground
-node benchmarks/aggregate.mjs                          # rebuild the report
-```
+| Condition | Pass rate | Mean tokens | Mean tool calls | Mean duration | Mean changed lines |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 3/3 | 244,286 | 25.3 | 69.2 s | 3.7 |
+| Upstream ponytail | 3/3 | 144,611 | 16.3 | 47.5 s | 3.7 |
+| Ponytail X | 3/3 | 314,821 | 21.3 | 91.9 s | 3.0 |
 
-Measured result, 3 runs per condition, full table in
-[`benchmarks/RESULTS.md`](benchmarks/RESULTS.md):
-
-| condition | pass rate | mean tokens | mean tool calls | mean duration | mean diff lines |
-|---|---|---|---|---|---|
-| baseline | 3/3 | 244,286 | 25.3 | 69.2 s | 3.7 |
-| upstream | 3/3 | 144,611 | 16.3 | 47.5 s | 3.7 |
-| ponytail-x | 3/3 | 314,821 | 21.3 | 91.9 s | 3.0 |
-
-Read this honestly: on a small, well-specified fixture all three conditions
-fix the bug — the fixture does not separate them on correctness. Upstream
-ponytail is the leanest (fewest tokens, fastest), consistent with its
-"write less" thesis. Ponytail X pays for its extras (injected mode policy,
-five skills, session metrics) in tokens and time, and in return produces the
-smallest and most consistent diff (3 lines in all 3 runs). The run also
-caught a real defect — dotted tool names (`ponytail.mode`) are rejected by
-the OpenAI-completions provider grammar; the bundle now ships kebab-case
-tool names.
+Interpret this result narrowly: every condition fixed the same small fixture, so this test did not distinguish the approaches on correctness. Upstream ponytail used fewer tokens and less time in this experiment; Ponytail X produced the smallest mean diff. These results are not a general performance guarantee. See [benchmarks/RESULTS.md](benchmarks/RESULTS.md) for the recorded details.
 
 ## Troubleshooting
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `skill "ponytail-core" is unknown` | Bundle not in the profile's `dsh.profile.bundles`, or the profile's `node_modules` link dangles | re-run `dsh plugin --profile <p> add link:…`; check `node_modules/dsh-ponytail-x` resolves |
-| `ponytail-x` entries missing from `--dump-config` | Bundle patch not applied | the profile `package.json` must list `dsh-ponytail-x` in `dsh.profile.bundles` |
-| AUTH fails with an old key | `$DSH_HOME/.credentials.yaml` outranks `.env` and the process env is not inherited by the booted app | update the managed store in `$DSH_HOME/.credentials.yaml` |
-| `th/*` models fail with `No active credentials` | Router-side credentials for the `th` route are inactive | use another provider model; the ids stay wired for when it returns |
-| Modes never switch | a session override from `ponytail-mode` is sticky | `ponytail-mode { "mode": "off" }` then back, or restart the session |
-| `type arrays are not supported` from the tool registry | a plugin tool schema used `type: [x, "null"]` | keep output schemas single-typed (this bundle's tool outputs are strings) |
-| Provider rejects the request with `tools[N].function.name` | a tool name carried a dot | kebab-case only (`ponytail-*`); the provider grammar is `^[a-zA-Z0-9_-]+$` |
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| **injection.disabled is not a recognized config key** | An older profile config uses the legacy alias and the installed build may not contain the compatibility fix. | Update to a build containing the fix, rebuild, and restart the affected profile. For new config, use **injection.enabled**. |
+| Ponytail X tools are missing | The bundle is absent from the profile, the patch was not applied, or the plugin link is broken. | Re-run the plugin add command and check the profile's bundle list and **node_modules/dsh-ponytail-x** link. |
+| Skill **ponytail-core** is unknown | The **ponytail-x-skills** provider did not load or its skill directory cannot be resolved. | Check the composed config and run the headless skill-loading check above. |
+| Injection does not appear | The shipped patch sets **injection.enabled** to **false**, or the session override is **off**. | Set **enabled: true** in the profile patch or clear/change the session override. |
+| A model is reported as not advertised | The profile model ID is absent from the router catalog, or the router cannot be reached. | Check the router URL and model ID; distinguish an unreachable catalog from an unadvertised model. |
+| Model requests fail | The route or provider credentials may be unavailable even if an ID is listed in the router catalog. | Check the provider's current credentials and use a model/route that is currently working. |
+| The mode does not change | A session-sticky override may be active. | Use **ponytail-mode** to read the override, then set a different mode or **off**. |
 
-## License
+## License and attribution
 
-MIT. Upstream copyright (© 2026 DietrichGebert) preserved; fork notice in
-`LICENSE`, attribution in `THIRD_PARTY_NOTICES.md`. Upstream rule text in
-`skills/ponytail-core` is kept verbatim under that license.
+Ponytail X is distributed under the MIT license. It is a fork of [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail); see [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license and attribution details.
