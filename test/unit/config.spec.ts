@@ -29,6 +29,20 @@ describe('resolveConfig', () => {
     assert.equal(config.models.astra.model, 'th/gpt-6-astra-fast')
   })
 
+  it('accepts the legacy injection.disabled alias and normalizes it', () => {
+    assert.equal(resolveConfig({ injection: { disabled: true } }).injection.enabled, false)
+    // Simulate a schema-materialized enabled default; the legacy key still wins.
+    assert.equal(resolveConfig({ injection: { disabled: true, enabled: true } }).injection.enabled, false)
+    assert.equal(resolveConfig({ injection: { disabled: false } }).injection.enabled, true)
+  })
+
+  it('validates the type of the legacy injection.disabled alias', () => {
+    assert.throws(
+      () => resolveConfig({ injection: { disabled: 'yes' } }),
+      /injection\.disabled must be a boolean/,
+    )
+  })
+
   it('rejects an unknown mode naming the field', () => {
     assert.throws(() => resolveConfig({ defaultMode: 'review' }), (error: unknown) => {
       assert.ok(error instanceof ConfigError)

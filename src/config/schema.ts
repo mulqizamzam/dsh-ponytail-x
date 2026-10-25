@@ -111,7 +111,7 @@ export function resolveConfig(input: Record<string, unknown> = {}): PonytailXCon
   const defaultMode = root['defaultMode'] === undefined ? 'full' : expectMode(root['defaultMode'], 'defaultMode')
 
   const injection = expectObject(root['injection'] ?? {}, 'injection')
-  rejectUnknown(injection, 'injection', ['enabled', 'maxChars'])
+  rejectUnknown(injection, 'injection', ['enabled', 'disabled', 'maxChars'])
   const complexity = expectObject(root['complexity'] ?? {}, 'complexity')
   rejectUnknown(complexity, 'complexity', ['ultraAt', 'liteAt'])
   const models = expectObject(root['models'] ?? {}, 'models')
@@ -125,7 +125,13 @@ export function resolveConfig(input: Record<string, unknown> = {}): PonytailXCon
   return {
     defaultMode,
     injection: {
-      enabled: expectBoolean(injection, 'enabled', 'injection.enabled', true),
+      // Older profile configs used "disabled". Normalize it here so the
+      // strict resolver remains compatible while "enabled" stays canonical.
+      // Prefer the alias when present: Schemastery may materialize enabled's
+      // default before this resolver sees the raw config.
+      enabled: injection['disabled'] !== undefined
+        ? !expectBoolean(injection, 'disabled', 'injection.disabled', false)
+        : expectBoolean(injection, 'enabled', 'injection.enabled', true),
       maxChars: expectNumber(injection, 'maxChars', 'injection.maxChars', 1200),
     },
     complexity: {

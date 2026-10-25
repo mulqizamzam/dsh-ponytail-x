@@ -149,6 +149,11 @@ Bundle defaults, overridable from the patch entry `ponytail-x`:
           fable: { provider: nine-router, model: th/claude-fable-5.1 }
 ```
 
+For compatibility with older profile configs, `injection.disabled: true` is also
+accepted and normalized to `injection.enabled: false`. Prefer `enabled` in
+new configs; when both keys are present, `disabled` takes precedence so an
+older setting cannot be overridden by the schema's default for `enabled`.
+
 Config is fail-loud: every rejection names the exact field path
 (`injection.enabled must be a boolean`).
 
